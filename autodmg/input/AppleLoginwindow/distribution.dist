@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <options customize="never" rootVolumeOnly="true"/>
+    <pkg-ref id="PKGID_TEMPLATE">
+        <bundle-version/>
+    </pkg-ref>
+    <options customize="never" require-scripts="false"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="PKGID_TEMPLATE"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="PKGID_TEMPLATE" visible="false">
+        <pkg-ref id="PKGID_TEMPLATE"/>
+    </choice>
+    <installation-check script="InstallationCheck()"/>
+    <script>
+    function InstallationCheck()
+    {
+        
+        // THIS IS A DYNAMICALLY CREATED TEMPLATE BECAUSE YOU DID NOT SUPPLY ONE        
+        // Just an example of advanced distribution req checks.
+        
+        // Check for file existence
+        //var f = system.files.fileExistsAtPath("/Applications/xxx");
+        
+        // install
+        //if (!f) {
+            return true;
+        //}
+
+        //my.result.message = system.localizedStringWithFormat('Already installed.');
+        //my.result.type = 'Fatal';
+        //return false;
+    }
+    </script>
+    <pkg-ref id="PKGID_TEMPLATE" onConclusion="none">#PKGID_TEMPLATE.pkg</pkg-ref>
+</installer-gui-script>

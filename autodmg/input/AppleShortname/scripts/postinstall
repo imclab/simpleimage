@@ -1,0 +1,16 @@
+#!/bin/bash
+
+path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
+
+#
+# shortname in Connect to Server dialog
+#
+# the plist
+defaults write "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist" UseDefaultName -bool NO
+defaults write "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist" UseShortName -bool YES
+
+[[ -e "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist" ]] && chown root:wheel "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist"
+[[ -e "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist" ]] && chmod 644 "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist"
+[[ -e "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist.lockfile" ]] && srm -f "${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist.lockfile"
+
+exit 0

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
+
+#
+# ssh daemon always
+#
+defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" KeepAlive -bool TRUE
+defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" Label "com.org.ssh"
+defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" ProgramArguments -array "/bin/sh" "-c" "\"sleep 10; systemsetup -setremotelogin on\""
+defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" RunAtLoad -bool TRUE
+# debug
+# defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" StandardOutPath -string "/tmp/com.org.ssh.log"
+defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" ThrottleInterval -int 900
+[[ -e "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" ]] && chown root:wheel "${path_root}/Library/LaunchDaemons/com.org.ssh.plist"
+[[ -e "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" ]] && chmod 644 "${path_root}/Library/LaunchDaemons/com.org.ssh.plist"
+
+#
+# the motd banner
+#
+motd_banner="Unauthorised access to these resources is prohibited."
+echo " " > "${path_root}/etc/motd"
+echo "${motd_banner}" >> "${path_root}/etc/motd"
+echo " " >> "${path_root}/etc/motd"
+
+exit 0
