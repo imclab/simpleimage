@@ -5,6 +5,8 @@ path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_
 #
 # ard agent always
 #
+# LaunchAgent that always configures Apple Remote Desktop client to require the end user to accept an incoming connection
+#
 defaults write "${path_root}/Library/LaunchAgents/com.org.ard.plist" KeepAlive -bool FALSE
 defaults write "${path_root}/Library/LaunchAgents/com.org.ard.plist" Label "com.org.ard"
 defaults write "${path_root}/Library/LaunchAgents/com.org.ard.plist" ProgramArguments -array "/bin/sh" "-c" "/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -GenerateReports -ChangeSettings -SendFiles -TextMessages -DeleteFiles -clientopts -setvnclegacy -vnclegacy no -setreqperm -reqperm yes -setmenuextra -menuextra yes -restart -agent"
@@ -18,6 +20,8 @@ defaults write "${path_root}/Library/LaunchAgents/com.org.ard.plist" ThrottleInt
 
 #
 # ssh daemon always
+#
+# LaunchDaemon that always configures ssh access
 #
 defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" KeepAlive -bool TRUE
 defaults write "${path_root}/Library/LaunchDaemons/com.org.ssh.plist" Label "com.org.ssh"
@@ -37,5 +41,18 @@ motd_banner="Unauthorised access to these resources is prohibited."
 echo " " > "${path_root}/etc/motd"
 echo "${motd_banner}" >> "${path_root}/etc/motd"
 echo " " >> "${path_root}/etc/motd"
+
+#
+# the vnc password
+#
+vnc_pwd="YOUR_HASH_HERE"
+echo "${vnc_pwd}" > "${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
+[[ -e "${path_root}/Library/Preferences/com.apple.VNCSettings.txt" ]] && chown -R root:wheel "${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
+[[ -e "${path_root}/Library/Preferences/com.apple.VNCSettings.txt" ]] && chmod -R 600 "${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
+
+#
+# always new existing session control
+#
+defaults write "${path_root}/Library/Preferences/com.apple.RemoteManagement.plist" VNCAlwaysStartOnConsole -bool true
 
 exit 0
