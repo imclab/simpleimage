@@ -8,12 +8,13 @@ path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_
 # additional loginwindow system information
 #
 # the plist
-defaults write "${path_root}/Library/Preferences/com.apple.loginwindow.plist" Hide500Users -bool YES
-defaults write "${path_root}/Library/Preferences/com.apple.loginwindow.plist" EnableExternalAccounts -bool NO
-defaults write "${path_root}/Library/Preferences/com.apple.loginwindow.plist" AdminHostInfo "DSStatus"
+the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
+defaults write "${the_plist}" Hide500Users -bool YES
+defaults write "${the_plist}" EnableExternalAccounts -bool NO
+defaults write "${the_plist}" AdminHostInfo "DSStatus"
 
-[[ -e "${path_root}/Library/Preferences/com.apple.loginwindow.plist" ]] && chown root:wheel "${path_root}/Library/Preferences/com.apple.loginwindow.plist"
-[[ -e "${path_root}/Library/Preferences/com.apple.loginwindow.plist" ]] && chmod 644 "${path_root}/Library/Preferences/com.apple.loginwindow.plist"
-[[ -e "${path_root}/Library/Preferences/com.apple.loginwindow.plist.lockfile" ]] && srm -f "${path_root}/Library/Preferences/com.apple.loginwindow.plist.lockfile"
+[[ -e "${the_plist}" ]] && chown root:wheel "${the_plist}"
+[[ -e "${the_plist}" ]] && chmod 644 "${the_plist}"
+[[ -e "${the_plist}.lockfile" ]] && srm -f "${the_plist}.lockfile"
 
 exit 0
