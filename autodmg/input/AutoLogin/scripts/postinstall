@@ -1,13 +1,14 @@
 #!/bin/bash
 
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
-device_os=$(defaults read "${path_root}/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9 etc
+device_os=$(defaults read "${path_root}/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.x etc
 
 #
 # autlogin
 #
-# shortname
-short_name="YOUR_LOGIN_USER_HERE"
+# autoLoginUser string (shortname)
+short_name=$(defaults read "${path_root}/tmp/com.org.autologin.plist autoLoginUser")
+
 # the plist
 [[ ! -z "${short_name}" ]] && defaults write "${path_root}/Library/Preferences/com.apple.loginwindow.plist" autoLoginUser -string "${short_name}" || exit 1
 [[ -e "${path_root}/Library/Preferences/com.apple.loginwindow.plist" ]] && chown root:wheel "${path_root}/Library/Preferences/com.apple.loginwindow.plist"  || exit 1
