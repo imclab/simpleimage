@@ -7,7 +7,7 @@ device_os=$(defaults read "${path_root}/System/Library/CoreServices/SystemVersio
 # autlogin
 #
 # autoLoginUser string (shortname)
-short_name=$(defaults read "${path_root}/tmp/com.org.autologin.plist autoLoginUser")
+short_name=$(defaults read "${path_root}/tmp/auto_conf.plist autoLoginUser")
 
 # the plist
 [[ ! -z "${short_name}" ]] && defaults write "${path_root}/Library/Preferences/com.apple.loginwindow.plist" autoLoginUser -string "${short_name}" || exit 1
