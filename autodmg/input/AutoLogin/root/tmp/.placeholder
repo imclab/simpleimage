@@ -1,2 +1,5 @@
-auto_conf.plist goes here.
-kcpassword.10.9.3 goes here.
+# auto_conf.plist goes here.
+auto_conf.plist should contain a single string value (autoLoginUser) consisting of your auto login user shortname.
+
+# kcpassword.10.9.3 goes here.
+a kcpassword file for your OS.

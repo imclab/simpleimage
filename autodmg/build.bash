@@ -15,7 +15,7 @@
 # Constants : UPPERCASE with _ separator
 # Functions : UPPER camel case.
 # Variables : lowercase with _ separator
-# 
+#
 
 REVERSE_DOMAIN="com.org"				# reverse domain for bundle ids etc.
 
@@ -48,8 +48,8 @@ done
 function echo_stdout
 {
 	echo "[   ${1}   ] ${2}"
-	echo $(date +"%Y%m%d-%H-%M-%S") >> "${LOG_DIR}/DEBUG.txt"
-	echo "[   ${1}   ] ${2}" >> "${LOG_DIR}/DEBUG.txt"
+	echo $(date +"%Y%m%d-%H-%M-%S") >> "${LOG_DIR}/DEBUG.log"
+	echo "[   ${1}   ] ${2}" >> "${LOG_DIR}/DEBUG.log"
 }
 
 # returns path true/false
@@ -63,57 +63,38 @@ function path_exists
 	fi
 }
 
-# pkg /scripts template
-function pkg_scripts
-{
-for i in "postinstall" "preinstall"; do
-	if (path_exists "${INPUT_DIR}/${application}/scripts/${i}"); then
-		echo_stdout "SKIP" " script exists: ${INPUT_DIR}/${application}/scripts/${i}";
-		sudo chown root:wheel "${INPUT_DIR}/${application}/scripts/${i}"
-		sudo chmod 755 "${INPUT_DIR}/${application}/scripts/${i}"
-	else
-		mkdir -p "${INPUT_DIR}/${application}/scripts"
-cat > "${INPUT_DIR}/${application}/scripts/${i}" << EOPROFILE
-#!/bin/bash
-
-exit 0
-EOPROFILE
-
-	fi
-done
-}
-
 # pkg distribution.dist template
-function pkg_distribution
+function make_distribution_dist
 {
-cat > "${INPUT_DIR}/${application}/distribution.dist" << EOPROFILE
+
+sudo cat > "${INPUT_DIR}/${application}/distribution.dist" << EOPROFILE
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="1">
     <options customize="never" rootVolumeOnly="true"/>
-    <pkg-ref id="PKGID_TEMPLATE">
+    <pkg-ref id="${bundle_identifier}">
         <bundle-version/>
     </pkg-ref>
     <options customize="never" require-scripts="false"/>
     <choices-outline>
         <line choice="default">
-            <line choice="PKGID_TEMPLATE"/>
+            <line choice="${bundle_identifier}"/>
         </line>
     </choices-outline>
     <choice id="default"/>
-    <choice id="PKGID_TEMPLATE" visible="false">
-        <pkg-ref id="PKGID_TEMPLATE"/>
+    <choice id="${bundle_identifier}" visible="false">
+        <pkg-ref id="${bundle_identifier}"/>
     </choice>
     <installation-check script="InstallationCheck()"/>
     <script>
     function InstallationCheck()
     {
-        
-        // THIS IS A DYNAMICALLY CREATED TEMPLATE BECAUSE YOU DID NOT SUPPLY ONE        
+
+        // THIS IS A DYNAMICALLY CREATED TEMPLATE BECAUSE YOU DID NOT SUPPLY ONE
         // Just an example of advanced distribution req checks.
-        
+
         // Check for file existence
         //var f = system.files.fileExistsAtPath("/Applications/xxx");
-        
+
         // install
         //if (!f) {
             return true;
@@ -124,7 +105,7 @@ cat > "${INPUT_DIR}/${application}/distribution.dist" << EOPROFILE
         //return false;
     }
     </script>
-    <pkg-ref id="PKGID_TEMPLATE" onConclusion="none">#PKGID_TEMPLATE.pkg</pkg-ref>
+    <pkg-ref id="${bundle_identifier}" onConclusion="none">${bundle_identifier}.pkg</pkg-ref>
 </installer-gui-script>
 EOPROFILE
 }
@@ -134,41 +115,51 @@ EOPROFILE
 # !think about using it in err checking
 function checksum
 {
-    openssl sha1 "${1}" >> "${LOG_DIR}/${application}.txt"
+    openssl sha1 "${1}" >> "${LOG_DIR}/${application}.log"
 }
 
 # pkgutil payload
 function build_pkgbuild
 {
-# skip if OUTPUT distribution exists
-if (path_exists "${output_distribution}"); then
-	echo_stdout "SKIP" " output_distribution exists: ${output_distribution}";
+# skip if OUTPUT productbuild pkg exists
+if (path_exists "${out_productbuild_pkg}"); then
+	echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
 else
-	# skip if OUTPUT package exists
-	if (path_exists "${output_package}"); then
-		echo_stdout "SKIP" " output_package exists: ${output_package}";
+	# skip if OUTPUT pkgbuild pkg exists
+	if (path_exists "${out_pkgbuild_pkg}"); then
+		echo_stdout "SKIP" " out_pkgbuild_pkg exists: ${out_pkgbuild_pkg}";
 	else
-		pkg_scripts
 		#  continue only if /scripts exists
 		if (path_exists "${build_scripts}"); then
 			#  init payload/nopayload
 			if (path_exists "${build_root}"); then
-				echo_stdout "PKG " " has a payload, building.  ${output_package}";
+				echo_stdout "PKG " " has a payload, building.  ${out_pkgbuild_pkg}";
 				pkgbuild \
 				--identifier "${bundle_identifier}" \
 				--root "${build_root}" \
 				--scripts "${build_scripts}" \
 				--version "${PACKAGE_VERSION}" \
-				"${output_package}" >> "${LOG_DIR}/${application}.txt"
-				checksum "${output_package}"
+				"${out_pkgbuild_pkg}" >> "${LOG_DIR}/${application}.log"
+				#checksum "${out_pkgbuild_pkg}"
 			else
-				echo_stdout "PKG " " has no payload, building. ${output_package}";
+				echo_stdout "PKG " " has no payload, building. ${out_pkgbuild_pkg}";
 				pkgbuild --identifier "${bundle_identifier}" \
 				--nopayload --scripts "${build_scripts}" \
 				--version "${PACKAGE_VERSION}" \
-				"${output_package}" >> "${LOG_DIR}/${application}.txt"
-				checksum "${output_package}"
+				"${out_pkgbuild_pkg}" >> "${LOG_DIR}/${application}.log"
+				#checksum "${out_pkgbuild_pkg}"
 			fi
+
+			if (path_exists "${distribution_dist}"); then
+				echo_stdout "INFO" " has a distribution_dist. ${distribution_dist}";
+				build_productbuild
+			else
+				echo_stdout "WARN" " distribution_dist DOES NOT EXIST, creating from template : ${out_productbuild_pkg}";
+				make_distribution_dist
+				build_productbuild
+				rm -Rf "${distribution_dist}"
+			fi
+
 		else
 			echo_stdout "WARN" " build_scripts DO NOT EXIST : ${build_scripts}";
 		fi
@@ -178,40 +169,90 @@ fi
 
 # productbuild
 function build_productbuild {
-	# skip if OUTPUT distribution exists
-	if (path_exists "${output_distribution}"); then
-		echo_stdout "SKIP" " output_distribution exists: ${output_distribution}";
+	# skip if OUTPUT productbuild package exists
+	if (path_exists "${out_productbuild_pkg}"); then
+		echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
 	else
-		pkg_distribution
-		# build distribution	
-		if (path_exists "${build_distribution}"); then
-			#echo_stdout "INFO" " has a build_distribution. ${build_distribution}";
-			if (path_exists "${output_package}"); then
-				rm -f "${dist_temp}"
-				cat "${build_distribution}" | sed s/PKGID_TEMPLATE/"${bundle_identifier}"/g > "${dist_temp}"
-				if [ $? == 0 ]; then
-					echo_stdout "DIST" " has an output_package, building. ${output_distribution}";
-					productbuild --distribution "${dist_temp}" \
+		# build distribution
+		if (path_exists "${distribution_dist}"); then
+			if (path_exists "${out_pkgbuild_pkg}"); then
+				if (path_exists "${distribution_dist}"); then
+					echo_stdout "DIST" " has an out_pkgbuild_pkg, building. ${out_productbuild_pkg}";
+					productbuild --distribution "${distribution_dist}" \
 					--package-path "${OUTPUT_DIR}" \
-					"${output_distribution}" >> "${LOG_DIR}/${application}.txt"
-					checksum "${output_distribution}"
-					# think about rm -Rf "${output_package}"
+					"${out_productbuild_pkg}" >> "${LOG_DIR}/${application}.log"
+					checksum "${out_productbuild_pkg}"
 				else
-					echo "rm ${build_distribution} rm ${build_package}"
+					echo_stdout "WARN" " something went wrong with distribution_dist, cannot productbuild : ${out_productbuild_pkg}";
 				fi
 			fi
 		else
-			echo_stdout "WARN" " build_distribution DOES NOT EXIST, cannot productbuild : ${output_distribution}";
+			echo_stdout "WARN" " distribution_dist DOES NOT EXIST, cannot productbuild : ${out_productbuild_pkg}";
 		fi
 	fi
+	# Cleanup pkgbuild version, we don't need it.
+	rm -Rf "${out_pkgbuild_pkg}"
 }
+
+# the magic starts here
+function process_deployments {
+	application=$(basename "${1}")
+	bundle_identifier="${REVERSE_DOMAIN}.${application}"
+	build_root="${1}/root"
+	build_scripts="${1}/scripts"
+	distribution_dist="${1}/distribution.dist"
+	vendor="${1}/vendor.plist"
+	out_pkgbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}.pkg"
+	out_productbuild_pkg="${OUTPUT_DIR}/${application}.pkg"
+	output_cmmac="${out_productbuild_pkg}.cmmac"
+	if [ "${application}" != "input" ]; then
+		#build_vendor_download
+		build_pkgbuild
+		#build_cmmac
+	fi
+
+	sudo chmod -R 777 "${OUTPUT_DIR}"
+}
+
+IFS=$'\n'
+
+# kick the tyres
+for i in $(find "${INPUT_DIR}" -maxdepth 1); do
+	if [ -d "${i}" ]; then
+		echo_stdout "    " " BEGIN: ${i}";
+		process_deployments "${i}"
+
+		echo_stdout "    " " ";
+	fi
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TAKE ANOTHER LOOK AT THIS
 
 # cmapputil
 function build_cmmac {
 	# !think of a dynamic way to cmmac a distribution productbuild vs a package
 	# so you can build vendors too.
 	echo_stdout "SCCM" " building. ${output_cmmac}";
-	CMAppUtil -v -c "${output_distribution}" -o "${OUTPUT_DIR}/"
+	CMAppUtil -v -c "${out_productbuild_pkg}" -o "${OUTPUT_DIR}/"
 	checksum "${output_cmmac}"
 }
 
@@ -223,10 +264,10 @@ function build_vendor_cmmac {
 	if (path_exists "${output_cmmac}"); then
 		echo_stdout "SKIP" " output_cmmac exists: ${output_cmmac}";
 	else
-		if (path_exists "${output_distribution}"); then
+		if (path_exists "${out_productbuild_pkg}"); then
 			echo_stdout "SCCM" " building. ${output_cmmac}";
-			CMAppUtil -s -v -c "${output_package}" -o "${OUTPUT_DIR}/"
-			checksum "${output_cmmac}"	
+			CMAppUtil -s -v -c "${out_pkgbuild_pkg}" -o "${OUTPUT_DIR}/"
+			checksum "${output_cmmac}"
 		fi
 	fi
 }
@@ -236,8 +277,8 @@ function build_vendor_cmmac {
 function build_vendor_download
 {
 # skip if OUTPUT distribution exists
-if (path_exists "${output_distribution}"); then
-	echo_stdout "SKIP" " output_distribution exists: ${output_distribution}";
+if (path_exists "${out_productbuild_pkg}"); then
+	echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
 else
 	if (path_exists "${vendor}"); then
 		vendor_url=$(defaults read "${vendor}" vendor_url)
@@ -245,28 +286,28 @@ else
 		vendor_volume=$(defaults read "${vendor}" vendor_volume)
 		vendor_payload=$(defaults read "${vendor}" vendor_payload)
 		vendor_target=$(defaults read "${vendor}" vendor_target)
-		
+
 		echo_stdout "DOWN" " vendor, building : ${vendor}";
 		mkdir -p "${build_root}/${vendor_target}"
 		curl -L -o "${build_root}/vendor.${vendor_type}" "${vendor_url}"
-		
+
 		if [ "${vendor_type}" == "dmg" ]; then
 			hdiutil attach -noautofsck -nobrowse -noverify -readonly "${build_root}/vendor.${vendor_type}"
-			ditto "/Volumes/${vendor_volume}/${vendor_payload}" "${build_root}/${vendor_target}/${vendor_payload}" >> "${LOG_DIR}/${application}.txt"
+			ditto "/Volumes/${vendor_volume}/${vendor_payload}" "${build_root}/${vendor_target}/${vendor_payload}" >> "${LOG_DIR}/${application}.log"
 			vendor_disk=$(df -k | grep "${vendor_volume}" | awk '{print $1}')
 			hdiutil detach "${vendor_disk}" -force
 		else
 			if [ "${vendor_type}" == "zip" ]; then
-				ditto -V -x -k --sequesterRsrc --rsrc "${build_root}/vendor.${vendor_type}" "${build_root}/${vendor_target}/" >> "${LOG_DIR}/${application}.txt"
+				ditto -V -x -k --sequesterRsrc --rsrc "${build_root}/vendor.${vendor_type}" "${build_root}/${vendor_target}/" >> "${LOG_DIR}/${application}.log"
 			fi
 		fi
 		build_version=$(defaults read "${build_root}/${vendor_target}/${vendor_payload}/Contents/info.plist" CFBundleShortVersionString)
 
 		# !think about naming versions
-		#output_package="${OUTPUT_DIR}/${bundle_identifier}${build_version}.pkg"
-		#output_distribution="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
-		#output_cmmac="${output_distribution}.cmmac"	
-		
+		#out_pkgbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.pkg"
+		#out_productbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
+		#output_cmmac="${out_productbuild_pkg}.cmmac"
+
 		rm -Rf "${build_root}/vendor.${vendor_type}"
 		#rm -Rf "${INPUT_DIR}/${application}/root"
 		#rm -Rf "${INPUT_DIR}/${application}/scripts"
@@ -274,48 +315,5 @@ else
 	fi
 fi
 }
-
-# the magic starts here
-function process_deployments {
-	application=$(basename "${1}")
-	bundle_identifier="${REVERSE_DOMAIN}.${application}"
-	build_root="${1}/root"
-	build_scripts="${1}/scripts"
-	build_distribution="${1}/distribution.dist"
-	vendor="${1}/vendor.plist"
-	dist_temp="${1}/distribution.dist.temp"
-	output_package="${OUTPUT_DIR}/${bundle_identifier}.pkg"
-	output_distribution="${OUTPUT_DIR}/${application}.pkg"
-	output_cmmac="${output_distribution}.cmmac"
-	if [ "${application}" != "input" ]; then
-		#build_vendor_download
-		build_pkgbuild
-		build_productbuild
-		#build_cmmac
-	fi
-	
-	# remove the older pkg, or comment this to keep it.
-	if [ -e "${output_package}" ]; then
-		if [ -e "${output_distribution}" ]; then
-			sudo rm -R "${output_package}"
-		fi
-	fi
-	
-	# cleanup
-	if [ -e "${dist_temp}" ]; then
-		sudo rm -R "${dist_temp}"
-	fi
-	
-	sudo chmod -R 777 "${OUTPUT_DIR}"
-}
-
-IFS=$'\n'
-
-# kick the tyres
-for i in $(find "${INPUT_DIR}" -maxdepth 1); do
-	if [ -d "${i}" ]; then
-		process_deployments "${i}"
-	fi
-done
 
 exit 0

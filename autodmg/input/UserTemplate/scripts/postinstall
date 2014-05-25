@@ -24,8 +24,6 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseButtonDivision -int 55
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseTwoFingerDoubleTapGesture -int 0
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseTwoFingerHorizSwipeGesture -int 0
-
-
 # com.apple.dock.plist (basic settings only).
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" autohide -bool false
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" launchanim -bool false
@@ -79,7 +77,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" lookForSharedMusic -bool false
 # Mail
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.mail" DisableInlineAttachmentViewing -bool true
-# NetworkBrowser 
+# NetworkBrowser
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.NetworkBrowser" DisableAirDrop -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.NetworkBrowser" BrowseAllInterfaces -bool false
 # Printing Prefs
@@ -182,7 +180,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:useRelativeDates bool NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:ListViewSettings:useRelativeDates NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:viewOptionsVersion integer 1" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
-#/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:ListViewSettings:viewOptionsVersion 1" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist" 
+#/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:ListViewSettings:viewOptionsVersion 1" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:columns dict" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:columns:name dict" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:columns:name:ascending bool YES" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
@@ -308,7 +306,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleKeyboardUIMode -int 2
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleMiniaturizeOnDoubleClick -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleShowAllExtensions -bool true
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleShowScrollBars -string "Always" 
+defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleShowScrollBars -string "Always"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" NSAutomaticSpellingCorrectionEnabled -bool false
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" NSAutomaticWindowAnimationsEnabled -bool false
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" NSDocumentSaveNewDocumentsToCloud -bool false
@@ -419,5 +417,5 @@ cat > "${path_root}/System/Library/User Template/English.lproj/Library/Preferenc
 </dict>
 </plist>
 EOPROFILE
-	
+
 exit 0

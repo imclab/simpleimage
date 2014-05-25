@@ -9,7 +9,6 @@ path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_
 the_plist="${path_root}/Library/Preferences/com.apple.NetworkAuthorization.plist"
 defaults write "${the_plist}" UseDefaultName -bool NO
 defaults write "${the_plist}" UseShortName -bool YES
-
 [[ -e "${the_plist}" ]] && chown root:wheel "${the_plist}"
 [[ -e "${the_plist}" ]] && chmod 644 "${the_plist}"
 [[ -e "${the_plist}.lockfile" ]] && srm -f "${the_plist}.lockfile"

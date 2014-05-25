@@ -2,6 +2,9 @@
 
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
 
+vnc_pwd=$(defaults read "${path_root}/tmp/auto_conf.plist vnc_hash")
+motd_banner=$(defaults read "${path_root}/tmp/auto_conf.plist motd_banner")
+
 #
 # ard agent always
 #
@@ -39,7 +42,6 @@ defaults write "${the_daemon}" ThrottleInterval -int 900
 #
 # the motd banner
 #
-motd_banner="Unauthorised access to these resources is prohibited."
 echo " " > "${path_root}/etc/motd"
 echo "${motd_banner}" >> "${path_root}/etc/motd"
 echo " " >> "${path_root}/etc/motd"
@@ -48,8 +50,6 @@ echo " " >> "${path_root}/etc/motd"
 # the vnc password
 #
 the_vnc="${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
-vnc_pwd="$(defaults read "${path_root}/tmp/auto_conf.plist vnc_hash")"
-
 echo "${vnc_pwd}" > "${the_vnc}"
 [[ -e "${the_vnc}" ]] && chown -R root:wheel "${the_vnc}"
 [[ -e "${the_vnc}" ]] && chmod -R 600 "${the_vnc}"

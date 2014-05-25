@@ -7,6 +7,7 @@ formatted_date=$(date +"%Y%m%d%H%M%S")
 # disable Dockfixup
 #
 # the plist
-mv "${path_root}/Library/Preferences/com.apple.dockfixup.plist" "${path_root}/Library/Preferences/com.apple.dockfixup.plist.${formatted_date}"
-	
+the_plist="${path_root}/Library/Preferences/com.apple.dockfixup.plist"
+mv "${the_plist}" "${the_plist}.${formatted_date}"
+
 exit 0

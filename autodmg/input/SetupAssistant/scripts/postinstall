@@ -1,14 +1,19 @@
 #!/bin/bash
 
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
-
 dev_os=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9 etc
 dev_build=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
 
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant" DidSeeCloudSetup -bool true
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant" GestureMovieSeen none
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant" LastSeenCloudProductVersion "${dev_os}"
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant" LastPreLoginTasksPerformedVersion "${dev_os}"
-defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant" LastPreLoginTasksPerformedBuild "${dev_build}"
+#
+# setup assistant
+#
+# preference
+the_plist="${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.SetupAssistant"
+
+defaults write "${the_plist}" DidSeeCloudSetup -bool true
+defaults write "${the_plist}" GestureMovieSeen none
+defaults write "${the_plist}" LastSeenCloudProductVersion "${dev_os}"
+defaults write "${the_plist}" LastPreLoginTasksPerformedVersion "${dev_os}"
+defaults write "${the_plist}" LastPreLoginTasksPerformedBuild "${dev_build}"
 
 exit 0

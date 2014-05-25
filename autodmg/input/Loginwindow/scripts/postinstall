@@ -12,7 +12,6 @@ the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
 defaults write "${the_plist}" Hide500Users -bool YES
 defaults write "${the_plist}" EnableExternalAccounts -bool NO
 defaults write "${the_plist}" AdminHostInfo "DSStatus"
-
 [[ -e "${the_plist}" ]] && chown root:wheel "${the_plist}"
 [[ -e "${the_plist}" ]] && chmod 644 "${the_plist}"
 [[ -e "${the_plist}.lockfile" ]] && srm -f "${the_plist}.lockfile"

@@ -1,3 +1,5 @@
-autodmg, packages I bundle in my "vanilla" soe.
+# autodmg
+packages I bundle in my "vanilla" soe.
 
-pkg, misc packages for OSX.
+# pkg
+misc packages for OSX.
