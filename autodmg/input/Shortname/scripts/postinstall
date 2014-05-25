@@ -1,7 +1,5 @@
 #!/bin/bash
-
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
-
 #
 # shortname in Connect to Server dialog
 #

@@ -1,10 +1,10 @@
 #!/bin/bash
-
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
-
+#
+# Configure ARD and legacy VNC
+#
 vnc_pwd=$(defaults read "${path_root}/tmp/auto_conf.plist vnc_hash")
 motd_banner=$(defaults read "${path_root}/tmp/auto_conf.plist motd_banner")
-
 #
 # ard agent always
 #
@@ -21,7 +21,6 @@ defaults write "${the_agent}" RunAtLoad -bool TRUE
 defaults write "${the_agent}" ThrottleInterval -int 900
 [[ -e "${the_agent}" ]] && chown root:wheel "${the_agent}"
 [[ -e "${the_agent}" ]] && chmod 644 "${the_agent}"
-
 #
 # ssh daemon always
 #
@@ -38,14 +37,12 @@ defaults write "${the_daemon}" RunAtLoad -bool TRUE
 defaults write "${the_daemon}" ThrottleInterval -int 900
 [[ -e "${the_daemon}" ]] && chown root:wheel "${the_daemon}"
 [[ -e "${the_daemon}" ]] && chmod 644 "${the_daemon}"
-
 #
 # the motd banner
 #
 echo " " > "${path_root}/etc/motd"
 echo "${motd_banner}" >> "${path_root}/etc/motd"
 echo " " >> "${path_root}/etc/motd"
-
 #
 # the vnc password
 #
