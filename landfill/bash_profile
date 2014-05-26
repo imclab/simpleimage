@@ -1,0 +1,27 @@
+export PS1='Please enter your choice: '
+
+while :
+do
+ clear
+ echo "   O S X | R E C O V E R Y"
+ echo "1. Netinstall"
+ echo "2. Netrestore"
+ echo "3. Repair Disk/Permissions"
+ echo "4. Command line"
+ echo "5. Exit"
+ echo -n "Please enter option [1 - 4]"
+ read opt
+ case $opt in
+  1) echo "************ Contents of /etc/passwd *************";
+     more /etc/passwd;;
+  2) echo "*********** List of users currently logged";
+     who | more;;
+  3) echo "You are in $(pwd) directory";   
+     echo "Press [enter] key to continue. . .";
+     read enterKey;;
+  4) /bin/bash --noprofile;;
+  *) echo "$opt is an invaild option. Please select option between 1-4 only";
+     echo "Press [enter] key to continue. . .";
+     read enterKey;;
+esac
+done

@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Declarations:
+# -r read only
+# -i integer
+# -a array
+# -f funtion
+# -x declares and export to subsequent commands via the environment.
+
+declare -r WORKING_PATH=$(dirname "${0}")
+
+echo $WORKING_DIR
+
+exit 0

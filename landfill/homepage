@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ROOT_VOLUME="$3"; if [ -z "${ROOT_VOLUME}" ] || [ "${ROOT_VOLUME}" = "/" ]; then ROOT_VOLUME=""; fi
+
+USER_PATH="${ROOT_VOLUME}/System/Library/User Template"
+
+for i in $(find "${USER_PATH}" -maxdepth 1); do
+	if [ -d "${i}" ]; then
+		echo "${i}"
+		
+		#sudo defaults write "${ROOT_VOLUME}/System/Library/User Template/${USER_TEMPLATE}/Library/Preferences/com.apple.internetconfigpriv" WWWHomePage "${ORG_HOMEPAGE}"
+		#sudo defaults write "${ROOT_VOLUME}/System/Library/User Template/${USER_TEMPLATE}/Library/Preferences/com.apple.Safari" HomePage "${ORG_HOMEPAGE}"
+	fi
+done
+
+exit 0
