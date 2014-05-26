@@ -8,9 +8,10 @@ misc packages for OSX.
 misc scripts to share.
 
 ### how
-Kick the tyres with build.bash.
+Kick the tyres with build.bash
 
-The script will recursively search the sub folders looking for a structure that confirms to my PKG template.
+The script will recursively search the sub folders looking for a structure that confirms to my PKG template. It
+uses the built-in Apple tools pkgutil and productbuild.
 
 		Example:
 
@@ -27,12 +28,12 @@ The script will recursively search the sub folders looking for a structure that 
 		|
 		+-- output
 
+https://github.com/autopkg is a more full featured solution.
 
 # acknowledgments
-
 These guys are worth following.
 
-https://github.com/gregneagle
-https://github.com/rtrouton
-https://github.com/timsutton
-https://github.com/MagerValp
++ https://github.com/gregneagle
++ https://github.com/rtrouton
++ https://github.com/timsutton
++ https://github.com/MagerValp
