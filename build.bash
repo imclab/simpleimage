@@ -232,6 +232,7 @@ for INPUT_FOLDER in $(find "${WORKING_DIR}" -name "input"); do #eg. /github/auto
 			fi
 		fi
 	done
+	sudo chmod -R 755 "${INPUT_FOLDER}"
 done
 
 # kick the tyres
@@ -328,7 +329,8 @@ else
 		#out_productbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
 		#output_cmmac="${out_productbuild_pkg}.cmmac"
 
-		rm -Rf "${build_root}/vendor.${vendor_type}"
+		sudo rm -Rf "${build_root}/vendor.${vendor_type}"
+
 		#rm -Rf "${INPUT_DIR}/${application}/root"
 		#rm -Rf "${INPUT_DIR}/${application}/scripts"
 		# add key for option to go straight to cmmac from dmg or pkg + key to do custom build too
