@@ -7,6 +7,27 @@ misc packages for OSX.
 # scripts
 misc scripts to share.
 
+### how
+Kick the tyres with build.bash.
+
+The script will recursively search the sub folders looking for a structure that confirms to my PKG template.
+
+		Example:
+
+		autodmg
+		|-- input
+		|    |-- YOURAPPTOPACKAGE 
+		|    |-- root
+		|    |    |-- Applications
+		|    |    +-- Library
+		|    |-- scripts
+		|         |-- postinstall
+		|         +-- preinstall
+		+-- log
+		|
+		+-- output
+
+
 # acknowledgments
 
 These guys are worth following.
