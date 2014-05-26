@@ -1,6 +1,9 @@
 # autodmg
 packages I bundle in my "vanilla" soe via autodmg.
 
+# landfill
+misc scripts for OSX.
+
 # pkg
 misc packages for OSX.
 
@@ -17,7 +20,7 @@ uses the built-in Apple tools pkgutil and productbuild.
 
 		autodmg
 		|-- input
-		|    |-- YOURAPPTOPACKAGE 
+		|    |-- YOURAPPTOPACKAGE
 		|    |-- root
 		|    |    |-- Applications
 		|    |    +-- Library

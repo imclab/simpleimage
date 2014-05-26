@@ -3,3 +3,4 @@
 *.pkg
 auto_conf.plist
 kcpassword.*
+*.mobileconfig
