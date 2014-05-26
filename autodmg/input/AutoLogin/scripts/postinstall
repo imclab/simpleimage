@@ -5,7 +5,7 @@ dev_os=$(defaults read "${path_root}/System/Library/CoreServices/SystemVersion" 
 # autlogin
 #
 # autoLoginUser string (shortname)
-short_name=$(defaults read "${path_root}/tmp/auto_conf.plist autoLoginUser")
+short_name=$(defaults read "${path_root}/tmp/auto_conf.plist" autoLoginUser)
 # preference
 the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
 [[ ! -z "${short_name}" ]] && defaults write "${the_plist}" autoLoginUser -string "${short_name}" || exit 1

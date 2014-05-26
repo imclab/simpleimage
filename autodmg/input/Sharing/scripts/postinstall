@@ -3,8 +3,8 @@ path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_
 #
 # Configure ARD and legacy VNC
 #
-vnc_pwd=$(defaults read "${path_root}/tmp/auto_conf.plist vnc_hash")
-motd_banner=$(defaults read "${path_root}/tmp/auto_conf.plist motd_banner")
+vnc_pwd=$(defaults read "${path_root}/tmp/auto_conf.plist" vnc_hash)
+motd_banner=$(defaults read "${path_root}/tmp/auto_conf.plist" motd_banner)
 #
 # ard agent always
 #
