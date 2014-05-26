@@ -33,7 +33,7 @@ sudo nvram boot-args="-v"
 #
 # boot script
 #
-if [[ -d "/private/var/boot" ]]; then
+if [[ -d "/private/var/firstboot" ]]; then
 	
 	#
 	# notify boot
@@ -249,7 +249,7 @@ if [[ -d "/private/var/boot" ]]; then
 	#
 	# pkgs
 	# adding directly to autodmg now.
-	#installer -dumplog -verbose -pkg "/private/var/boot/CreateLionUser.pkg" -target /
+	#installer -dumplog -verbose -pkg "/private/var/firstboot/CreateLionUser.pkg" -target /
 	
 	# profiles
 	#
@@ -260,9 +260,9 @@ if [[ -d "/private/var/boot" ]]; then
 	#	exit 1
 	#fi
 	# vpn
-	#[[ -e "/private/var/boot/vpn.mobileconfig" ]] && profiles -I -F "/private/var/boot/vpn.mobileconfig"
+	#[[ -e "/private/var/firstboot/vpn.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/vpn.mobileconfig"
 	# wifi
-	#[[ -e "/private/var/boot/wifi.mobileconfig" ]] && profiles -I -F "/private/var/boot/wifi.mobileconfig"
+	#[[ -e "/private/var/firstboot/wifi.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/wifi.mobileconfig"
 	
 	#
 	# email
