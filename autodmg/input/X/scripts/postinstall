@@ -1,11 +1,8 @@
 #!/bin/bash
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
 
-chmod -R 775 "${path_root}/Applications/Utilities/localise.app"
-chown -R root:admin "${path_root}/Applications/Utilities/localise.app"
-
 defaults delete "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments
-defaults write "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments -array-add "/var/boot/boot"
+defaults write "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments -array-add "/var/firstboot/script"
 sudo chown root:wheel "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
 sudo chmod 644 "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
 
