@@ -5,12 +5,6 @@
 # is cool so that's why I prefer this new
 # pkg format over the older.
 # *************************************** #
-
-#
-# Consideration is required with regard
-# to spaces in file paths in INPUT_DIR
-#
-
 #
 # Constants : UPPERCASE with _ separator
 # Functions : UPPER camel case.
@@ -18,71 +12,159 @@
 #
 
 REVERSE_DOMAIN="com.org"				# reverse domain for bundle ids etc.
-
 PACKAGE_VERSION=$(date +"%Y%m%d%H%M%S")	# dynamic version number based on the date !important, used in detection
-
 WORKING_DIR=$(dirname "${0}")			# directory: working directory
-INPUT_DIR="${WORKING_DIR}/input"		# directory: sources for building
-LOG_DIR="${WORKING_DIR}/log"			# directory: logs
-OUTPUT_DIR="${WORKING_DIR}/output"		# directory: output packages, distribution packages, cmmac
-
-# setup environment
-#for d in "${INPUT_DIR}" "${LOG_DIR}" "${OUTPUT_DIR}"; do
-#	mkdir -p "${d}"
-#done
-
-# test environment
-missing_commands=0
-#required_commands="pkgutil productbuild CMAppUtil"
-required_commands="pkgutil productbuild"
-for i in $required_commands; do
-  if ! hash "${i}" >/dev/null 2>&1; then
-    printf "Command not found in PATH: %s\n" "${i}" >&2
-    ((missing_commands++))
-    exit 85
-  fi
-done
-
+IFS=$'\n'
+clear
 # returns stdout
 # 2 args: info, path
+
+echo $(date +"%Y%m%d-%H-%M-%S")
+
 function echo_stdout
 {
-	echo "[   ${1}   ] ${2}"
-	echo $(date +"%Y%m%d-%H-%M-%S") >> "${LOG_DIR}/DEBUG.log"
-	echo "[   ${1}   ] ${2}" >> "${LOG_DIR}/DEBUG.log"
+  if [ ${1} != "SKIP" ]; then
+    echo "[   ${1}   ] ${2}"
+  fi
+
+  [[ -e ${log_dir} ]] && echo $(date +"%Y%m%d-%H-%M-%S") >> "${log_dir}/DEBUG.log"
+  [[ -e ${log_dir} ]] && echo "[   ${1}   ] ${2}" >> "${log_dir}/DEBUG.log"
 }
 
 # returns path true/false
 # 1 args: path
 function path_exists
 {
-	if [ -e "${1}" ]; then
-		return 0
-	else
-		return 1
-	fi
+  if [ -e "${1}" ]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
-# pkg distribution.dist template
-function make_distribution_dist
+# sha1 checksum
+# 1 args: path
+# !think about using it in err checking
+function checksum
 {
+    openssl sha1 "${1}" >> "${log_dir}/${pkg_to_build}.log"
+}
 
-sudo cat > "${INPUT_FOLDER}/${PKG_TO_BUILD}/distribution.dist" << EOPROFILE
+function search_input
+{
+  for input_folder in $(find "${WORKING_DIR}" -type d -name "input"); do #eg. /github/autodmg/input
+    echo_stdout "INFO" " searching ${input_folder}";
+    search_pkg_template
+  done
+}
+
+function search_pkg_template
+{
+  for pkg_source in $(find "${input_folder}" -type d -maxdepth 1); do #eg. /github/autodmg/input/Autologin
+    is_in_input=$(basename "${input_folder}") #eg. input
+    if [ "$is_in_input" == "input" ]; then
+      sudo chmod -R 755 "${input_folder}"
+      input_parent=$(dirname "$input_folder") #eg. /github/autodmg
+      log_dir="${input_parent}/log"
+      mkdir -p "${log_dir}"
+      check_pkg_scripts
+    fi
+  done
+}
+
+function check_pkg_scripts
+{
+  pkg_scripts="${pkg_source}/scripts" #eg. /github/autodmg/input/Autologin/scripts
+  if [ -d "${pkg_scripts}" ]; then
+    echo_stdout "INFO" " found ${pkg_source}"
+    check_pkg_postinstall
+  fi
+}
+
+function check_pkg_postinstall {
+  pkg_postinstall="${pkg_source}/scripts/postinstall" #eg. /github/autodmg/input/Autologin/scripts/postinstall
+  if [ -e "${pkg_postinstall}" ]; then
+    echo_stdout "INFO" " found ${pkg_postinstall}"
+    check_pkg_preinstall
+  fi
+}
+
+function check_pkg_preinstall {
+  pkg_preinstall="${pkg_source}/scripts/preinstall" #eg. /github/autodmg/input/Autologin/scripts/preinstall
+  if [ -e "${pkg_preinstall}" ]; then
+    echo_stdout "INFO" " found ${pkg_preinstall}"
+    process_pkgbuild
+  fi
+}
+
+function process_pkgbuild {
+  pkg_to_build=$(basename "${pkg_source}") #eg. Autologin
+  pkg_bundle_id="${REVERSE_DOMAIN}.${pkg_to_build}" #eg. com.org.Autologin
+  pkg_root="${pkg_source}/root" #eg. /github/autodmg/input/Autologin/root
+  if [ -d "${pkg_root}" ]; then
+    echo_stdout "INFO" " found ${pkg_root}"
+    output_dir="${input_parent}/output/payload"
+    mkdir -p "${output_dir}"
+    process_pkgbuild_source
+
+  else
+    echo_stdout "INFO" " no root found ${pkg_root}"
+    output_dir="${input_parent}/output/nopayload"
+    mkdir -p "${output_dir}"
+    process_pkgbuild_tempate_nopayload
+  fi
+  process_productbuild
+}
+
+
+function process_pkgbuild_source {
+  pkg_pkgbuild="${input_parent}/output/payload/${pkg_bundle_id}.pkg" #eg. /github/autodmg/output/payload/com.org.Autologin.pkg
+  pkg_prodbuild="${input_parent}/output/payload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
+  if [ ! -e "${pkg_pkgbuild}" ]; then
+    echo_stdout "PKG" " pkgbuild with payload ${pkg_bundle_id}"
+    pkgbuild \
+    --identifier "${pkg_bundle_id}" \
+    --root "${pkg_root}" \
+    --scripts "${pkg_scripts}" \
+    --version "${PACKAGE_VERSION}" \
+    "${pkg_pkgbuild}" >> "${log_dir}/${pkg_to_build}.log"
+  else
+    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
+  fi
+}
+
+function process_pkgbuild_tempate_nopayload {
+  pkg_pkgbuild="${input_parent}/output/nopayload/${pkg_bundle_id}.pkg" #eg. /github/autodmg/output/payload/com.org.Dockfixup.pkg
+  pkg_prodbuild="${input_parent}/output/nopayload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
+  if [ ! -e "${pkg_pkgbuild}" ]; then
+    echo_stdout "PKG" " pkgbuild payload free ${pkg_bundle_id}"
+    pkgbuild --identifier "${pkg_bundle_id}" \
+    --nopayload --scripts "${pkg_scripts}" \
+    --version "${PACKAGE_VERSION}" \
+    "${pkg_pkgbuild}" >> "${log_dir}/${pkg_to_build}.log"
+    checksum "${pkg_pkgbuild}"
+  else
+    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
+  fi
+}
+
+function use_distribution_template {
+cat > "${input_folder}/${pkg_to_build}/distribution.dist" << EOPROFILE
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="1">
     <options customize="never" rootVolumeOnly="true"/>
-    <pkg-ref id="${PKG_BUNDLE_ID}">
+    <pkg-ref id="${pkg_bundle_id}">
         <bundle-version/>
     </pkg-ref>
     <options customize="never" require-scripts="false"/>
     <choices-outline>
         <line choice="default">
-            <line choice="${PKG_BUNDLE_ID}"/>
+            <line choice="${pkg_bundle_id}"/>
         </line>
     </choices-outline>
     <choice id="default"/>
-    <choice id="${PKG_BUNDLE_ID}" visible="false">
-        <pkg-ref id="${PKG_BUNDLE_ID}"/>
+    <choice id="${pkg_bundle_id}" visible="false">
+        <pkg-ref id="${pkg_bundle_id}"/>
     </choice>
     <installation-check script="InstallationCheck()"/>
     <script>
@@ -105,192 +187,86 @@ sudo cat > "${INPUT_FOLDER}/${PKG_TO_BUILD}/distribution.dist" << EOPROFILE
         //return false;
     }
     </script>
-    <pkg-ref id="${PKG_BUNDLE_ID}" onConclusion="none">${PKG_BUNDLE_ID}.pkg</pkg-ref>
+    <pkg-ref id="${pkg_bundle_id}" onConclusion="none">${pkg_bundle_id}.pkg</pkg-ref>
 </installer-gui-script>
 EOPROFILE
 }
 
-# sha1 checksum
-# 1 args: path
-# !think about using it in err checking
-function checksum
-{
-    openssl sha1 "${1}" >> "${LOG_DIR}/${PKG_TO_BUILD}.log"
+function process_productbuild {
+  if [ ! -e "${pkg_prodbuild}" ]; then
+    process_productbuild_dist
+  else
+    echo_stdout "SKIP" " productbuild exists ${pkg_prodbuild}"
+  fi
 }
 
-# pkgutil payload
-function build_pkgbuild
-{
-echo "Making ${INPUT_PARENT}/output"
-mkdir -p "${INPUT_PARENT}/output"
-mkdir -p "${INPUT_PARENT}/log"
-# skip if OUTPUT productbuild pkg exists
-if (path_exists "${PKG_PRODBUILD}"); then
-	echo_stdout "SKIP" " PKG_PRODBUILD exists: ${PKG_PRODBUILD}";
-else
-	# skip if OUTPUT pkgbuild pkg exists
-	if (path_exists "${PKG_PKGBUILD}"); then
-		echo_stdout "SKIP" " PKG_PKGBUILD exists: ${PKG_PKGBUILD}";
-	else
-		#  continue only if /scripts exists
-		if (path_exists "${PKG_SCRIPTS}"); then
-			#  init payload/nopayload
-			if (path_exists "${PKG_ROOT}"); then
-				echo_stdout "PKG " " has a payload, building.  ${PKG_PKGBUILD}";
-				pkgbuild \
-				--identifier "${PKG_BUNDLE_ID}" \
-				--root "${PKG_ROOT}" \
-				--scripts "${PKG_SCRIPTS}" \
-				--version "${PACKAGE_VERSION}" \
-				"${PKG_PKGBUILD}" >> "${LOG_DIR}/${PKG_TO_BUILD}.log"
-				#checksum "${PKG_PKGBUILD}"
-			else
-				echo_stdout "PKG " " has no payload, building. ${PKG_PKGBUILD}";
-				pkgbuild --identifier "${PKG_BUNDLE_ID}" \
-				--nopayload --scripts "${PKG_SCRIPTS}" \
-				--version "${PACKAGE_VERSION}" \
-				"${PKG_PKGBUILD}" >> "${LOG_DIR}/${PKG_TO_BUILD}.log"
-				#checksum "${PKG_PKGBUILD}"
-			fi
-
-			if (path_exists "${PKG_DIST}"); then
-				echo_stdout "INFO" " has a PKG_DIST. ${PKG_DIST}";
-				build_productbuild
-			else
-				echo_stdout "WARN" " PKG_DIST DOES NOT EXIST, creating from template : ${PKG_PRODBUILD}";
-				make_distribution_dist
-				build_productbuild
-				rm -Rf "${PKG_DIST}"
-			fi
-
-		else
-			echo_stdout "WARN" " PKG_SCRIPTS DO NOT EXIST : ${PKG_SCRIPTS}";
-		fi
-	fi
-fi
+function process_productbuild_dist {
+  pkg_dist="${pkg_source}/distribution.dist" #eg. /github/autodmg/input/Autologin/distribution.dist
+  if [ -e "${pkg_dist}" ]; then
+    echo_stdout "INFO" " found custom DIST ${pkg_dist}";
+    echo_stdout "DIST" " productbuild ${pkg_prodbuild}";
+    productbuild --distribution "${pkg_dist}" \
+    --package-path "${output_dir}" \
+    "${pkg_prodbuild}" >> "${log_dir}/${pkg_to_build}.log"
+  else
+    echo_stdout "WARN" " custom DIST not found, using generic template ${pkg_prodbuild}";
+    use_distribution_template
+    echo_stdout "DIST" " productbuild ${pkg_prodbuild}";
+    productbuild --distribution "${pkg_dist}" \
+    --package-path "${output_dir}" \
+    "${pkg_prodbuild}" >> "${log_dir}/${pkg_to_build}.log"
+    sudo rm -Rf "${pkg_dist}"
+  fi
+  checksum "${pkg_prodbuild}"
+  rm -Rf "${pkg_pkgbuild}"
 }
 
-# productbuild
-function build_productbuild {
-	# skip if OUTPUT productbuild package exists
-	if (path_exists "${PKG_PRODBUILD}"); then
-		echo_stdout "SKIP" " PKG_PRODBUILD exists: ${PKG_PRODBUILD}";
-	else
-		# build distribution
-		if (path_exists "${PKG_DIST}"); then
-			if (path_exists "${PKG_PKGBUILD}"); then
-				if (path_exists "${PKG_DIST}"); then
-					echo_stdout "DIST" " has an PKG_PKGBUILD, building. ${PKG_PRODBUILD}";
-					productbuild --distribution "${PKG_DIST}" \
-					--package-path "${OUTPUT_DIR}" \
-					"${PKG_PRODBUILD}" >> "${LOG_DIR}/${PKG_TO_BUILD}.log"
-					checksum "${PKG_PRODBUILD}"
-				else
-					echo_stdout "WARN" " something went wrong with PKG_DIST, cannot productbuild : ${PKG_PRODBUILD}";
-				fi
-			fi
-		else
-			echo_stdout "WARN" " PKG_DIST DOES NOT EXIST, cannot productbuild : ${PKG_PRODBUILD}";
-		fi
-	fi
-	# Cleanup pkgbuild version, we don't need it.
-	rm -Rf "${PKG_PKGBUILD}"
-}
+search_input
 
-IFS=$'\n'
-
-for INPUT_FOLDER in $(find "${WORKING_DIR}" -name "input"); do #eg. /github/autodmg/input
-	for PKG_SOURCE in $(find "${INPUT_FOLDER}" -maxdepth 1); do #eg. /github/autodmg/input/Autologin
-		IS_INPUT=$(basename "${INPUT_FOLDER}") #eg. input
-		INPUT_PARENT=$(dirname "$INPUT_FOLDER") #eg. /github/autodmg
-		if [ "$IS_INPUT" == "input" ]; then
-
-			PKG_TO_BUILD=$(basename "${PKG_SOURCE}") #eg. Autologin
-			PKG_BUNDLE_ID="${REVERSE_DOMAIN}.${PKG_TO_BUILD}" #eg. com.org.Autologin
-			PKG_SCRIPTS="${PKG_SOURCE}/scripts" #eg. /github/autodmg/input/Autologin/scripts
-
-			if [ -d "${PKG_SCRIPTS}" ]; then
-
-				PKG_ROOT="${PKG_SOURCE}/root" #eg. /github/autodmg/input/Autologin/root
-				PKG_DIST="${PKG_SOURCE}/distribution.dist" #eg. /github/autodmg/input/Autologin/distribution.dist
-				PKG_PKGBUILD="${INPUT_PARENT}/output/${PKG_BUNDLE_ID}.pkg" #eg. /github/autodmg/output/com.org.Autologin.pkg
-				PKG_PRODBUILD="${INPUT_PARENT}/output/${PKG_TO_BUILD}.pkg" #eg. /github/autodmg/output/Autologin.pkg
-				OUTPUT_DIR="${INPUT_PARENT}/output"
-				LOG_DIR="${INPUT_PARENT}/log"
-				#output_cmmac="${out_productbuild_pkg}.cmmac"
-				#vendor="${PKG_SOURCE}/vendor.plist"
-				#echo $PKG_TO_BUILD
-				#echo $PKG_BUNDLE_ID
-				#echo $PKG_ROOT
-				#echo $PKG_SCRIPTS
-				#echo $PKG_DIST
-				#echo $PKG_PKGBUILD
-				#echo $PKG_PRODBUILD
-				build_pkgbuild
-				#build_vendor_download
-				#build_cmmac
-			fi
-		fi
-	done
-	sudo chmod -R 755 "${INPUT_FOLDER}"
-done
-
-# kick the tyres
-#for i in $(find "${INPUT_DIR}" -maxdepth 1); do
-#	if [ -d "${i}" ]; then
-
-		#echo $i
-
-		#echo_stdout "    " " BEGIN: ${i}";
-		#process_deployments "${i}"
-		#echo_stdout "    " " ";
-#	fi
-#done
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+exit 0
 
 # TAKE ANOTHER LOOK AT THIS
 
+# setup environment
+#for d in "${INPUT_DIR}" "${log_dir}" "${OUTPUT_DIR}"; do
+#	mkdir -p "${d}"
+#done
+
+# test environment
+missing_commands=0
+#required_commands="pkgutil productbuild CMAppUtil"
+required_commands="pkgutil productbuild"
+for i in $required_commands; do
+  if ! hash "${i}" >/dev/null 2>&1; then
+    printf "Command not found in PATH: %s\n" "${i}" >&2
+    ((missing_commands++))
+    exit 85
+  fi
+done
+
 # cmapputil
 function build_cmmac {
-	# !think of a dynamic way to cmmac a distribution productbuild vs a package
-	# so you can build vendors too.
-	echo_stdout "SCCM" " building. ${output_cmmac}";
-	CMAppUtil -v -c "${out_productbuild_pkg}" -o "${OUTPUT_DIR}/"
-	checksum "${output_cmmac}"
+  # !think of a dynamic way to cmmac a distribution productbuild vs a package
+  # so you can build vendors too.
+  echo_stdout "SCCM" " building. ${output_cmmac}";
+  CMAppUtil -v -c "${out_productbuild_pkg}" -o "${OUTPUT_DIR}/"
+  checksum "${output_cmmac}"
 }
 
 # cmapputil vendors
 function build_vendor_cmmac {
-	# !think of a dynamic way to cmmac a distribution productbuild vs a package
-	# so you can build vendors too.
-	# skip if OUTPUT cmmac exists
-	if (path_exists "${output_cmmac}"); then
-		echo_stdout "SKIP" " output_cmmac exists: ${output_cmmac}";
-	else
-		if (path_exists "${out_productbuild_pkg}"); then
-			echo_stdout "SCCM" " building. ${output_cmmac}";
-			CMAppUtil -s -v -c "${out_pkgbuild_pkg}" -o "${OUTPUT_DIR}/"
-			checksum "${output_cmmac}"
-		fi
-	fi
+  # !think of a dynamic way to cmmac a distribution productbuild vs a package
+  # so you can build vendors too.
+  # skip if OUTPUT cmmac exists
+  if (path_exists "${output_cmmac}"); then
+    echo_stdout "SKIP" " output_cmmac exists: ${output_cmmac}";
+  else
+    if (path_exists "${out_productbuild_pkg}"); then
+      echo_stdout "SCCM" " building. ${output_cmmac}";
+      CMAppUtil -s -v -c "${out_pkgbuild_pkg}" -o "${OUTPUT_DIR}/"
+      checksum "${output_cmmac}"
+    fi
+  fi
 }
 
 # download vendors
@@ -299,42 +275,42 @@ function build_vendor_download
 {
 # skip if OUTPUT distribution exists
 if (path_exists "${out_productbuild_pkg}"); then
-	echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
+  echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
 else
-	if (path_exists "${vendor}"); then
-		vendor_url=$(defaults read "${vendor}" vendor_url)
-		vendor_type=$(defaults read "${vendor}" vendor_type)
-		vendor_volume=$(defaults read "${vendor}" vendor_volume)
-		vendor_payload=$(defaults read "${vendor}" vendor_payload)
-		vendor_target=$(defaults read "${vendor}" vendor_target)
+  if (path_exists "${vendor}"); then
+    vendor_url=$(defaults read "${vendor}" vendor_url)
+    vendor_type=$(defaults read "${vendor}" vendor_type)
+    vendor_volume=$(defaults read "${vendor}" vendor_volume)
+    vendor_payload=$(defaults read "${vendor}" vendor_payload)
+    vendor_target=$(defaults read "${vendor}" vendor_target)
 
-		echo_stdout "DOWN" " vendor, building : ${vendor}";
-		mkdir -p "${build_root}/${vendor_target}"
-		curl -L -o "${build_root}/vendor.${vendor_type}" "${vendor_url}"
+    echo_stdout "DOWN" " vendor, building : ${vendor}";
+    mkdir -p "${build_root}/${vendor_target}"
+    curl -L -o "${build_root}/vendor.${vendor_type}" "${vendor_url}"
 
-		if [ "${vendor_type}" == "dmg" ]; then
-			hdiutil attach -noautofsck -nobrowse -noverify -readonly "${build_root}/vendor.${vendor_type}"
-			ditto "/Volumes/${vendor_volume}/${vendor_payload}" "${build_root}/${vendor_target}/${vendor_payload}" >> "${LOG_DIR}/${application}.log"
-			vendor_disk=$(df -k | grep "${vendor_volume}" | awk '{print $1}')
-			hdiutil detach "${vendor_disk}" -force
-		else
-			if [ "${vendor_type}" == "zip" ]; then
-				ditto -V -x -k --sequesterRsrc --rsrc "${build_root}/vendor.${vendor_type}" "${build_root}/${vendor_target}/" >> "${LOG_DIR}/${application}.log"
-			fi
-		fi
-		build_version=$(defaults read "${build_root}/${vendor_target}/${vendor_payload}/Contents/info.plist" CFBundleShortVersionString)
+    if [ "${vendor_type}" == "dmg" ]; then
+      hdiutil attach -noautofsck -nobrowse -noverify -readonly "${build_root}/vendor.${vendor_type}"
+      ditto "/Volumes/${vendor_volume}/${vendor_payload}" "${build_root}/${vendor_target}/${vendor_payload}" >> "${log_dir}/${application}.log"
+      vendor_disk=$(df -k | grep "${vendor_volume}" | awk '{print $1}')
+      hdiutil detach "${vendor_disk}" -force
+    else
+      if [ "${vendor_type}" == "zip" ]; then
+        ditto -V -x -k --sequesterRsrc --rsrc "${build_root}/vendor.${vendor_type}" "${build_root}/${vendor_target}/" >> "${log_dir}/${application}.log"
+      fi
+    fi
+    build_version=$(defaults read "${build_root}/${vendor_target}/${vendor_payload}/Contents/info.plist" CFBundleShortVersionString)
 
-		# !think about naming versions
-		#out_pkgbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.pkg"
-		#out_productbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
-		#output_cmmac="${out_productbuild_pkg}.cmmac"
+    # !think about naming versions
+    #out_pkgbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.pkg"
+    #out_productbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
+    #output_cmmac="${out_productbuild_pkg}.cmmac"
 
-		sudo rm -Rf "${build_root}/vendor.${vendor_type}"
+    sudo rm -Rf "${build_root}/vendor.${vendor_type}"
 
-		#rm -Rf "${INPUT_DIR}/${application}/root"
-		#rm -Rf "${INPUT_DIR}/${application}/scripts"
-		# add key for option to go straight to cmmac from dmg or pkg + key to do custom build too
-	fi
+    #rm -Rf "${INPUT_DIR}/${application}/root"
+    #rm -Rf "${INPUT_DIR}/${application}/scripts"
+    # add key for option to go straight to cmmac from dmg or pkg + key to do custom build too
+  fi
 fi
 }
 
