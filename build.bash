@@ -1,32 +1,25 @@
 #!/bin/bash
 # *************************************** #
-# Automates PKG/CMMAC building, using the
-# new flat pack PKG format. pkgutil info
-# is cool so that's why I prefer this new
-# pkg format over the older.
+# automates pkgbuild/productbuild/cmmac
+# something I built a long time ago and
+# still use, although considering checking
+# out autopkg (https://github.com/autopkg/autopkg)
+# when I get time as it may be more
+# comprehensive and the support community seems cool.
 # *************************************** #
 #
-# Constants : UPPERCASE with _ separator
-# Functions : UPPER camel case.
-# Variables : lowercase with _ separator
-#
 
-REVERSE_DOMAIN="com.org"				# reverse domain for bundle ids etc.
-PACKAGE_VERSION=$(date +"%Y%m%d%H%M%S")	# dynamic version number based on the date !important, used in detection
-WORKING_DIR=$(dirname "${0}")			# directory: working directory
+declare -r REVERSE_DOMAIN="com.org"				# reverse domain for bundle ids etc.
+declare -r PACKAGE_VERSION=$(date +"%Y%m%d%H%M%S")	# dynamic version number based on the date !important, used in detection
+declare -r WORKING_DIR=$(dirname "${0}")			# directory: working directory
 IFS=$'\n'
-clear
-# returns stdout
-# 2 args: info, path
-
-echo $(date +"%Y%m%d-%H-%M-%S")
 
 function echo_stdout
 {
-  if [ ${1} != "SKIP" ]; then
-    echo "[   ${1}   ] ${2}"
-  fi
-
+  [[ ${1} == "DIST" ]] && echo "[   ${1}   ] ${2}"
+  #[[ ${1} == "INFO" ]] && echo "[   ${1}   ] ${2}"
+  #[[ ${1} == "SKIP" ]] && echo "[   ${1}   ] ${2}"
+  #[[ ${1} == "WARN" ]] && echo "[   ${1}   ] ${2}"
   [[ -e ${log_dir} ]] && echo $(date +"%Y%m%d-%H-%M-%S") >> "${log_dir}/DEBUG.log"
   [[ -e ${log_dir} ]] && echo "[   ${1}   ] ${2}" >> "${log_dir}/DEBUG.log"
 }
@@ -50,68 +43,91 @@ function checksum
     openssl sha1 "${1}" >> "${log_dir}/${pkg_to_build}.log"
 }
 
-function search_input
+function search_input  #eg. /github/autodmg/input
 {
-  for input_folder in $(find "${WORKING_DIR}" -type d -name "input"); do #eg. /github/autodmg/input
+  for input_folder in $(find "${WORKING_DIR}" -type d -name "input"); do
     echo_stdout "INFO" " searching ${input_folder}";
     search_pkg_template
   done
 }
 
-function search_pkg_template
+function search_pkg_template #eg. /github/autodmg/input/Autologin
 {
-  for pkg_source in $(find "${input_folder}" -type d -maxdepth 1); do #eg. /github/autodmg/input/Autologin
+  for pkg_source in $(find "${input_folder}" -type d -maxdepth 1); do
     is_in_input=$(basename "${input_folder}") #eg. input
     if [ "$is_in_input" == "input" ]; then
-      sudo chmod -R 755 "${input_folder}"
+      sudo chmod -R 755 "${input_folder}"  #eg. /github/autodmg/input
       input_parent=$(dirname "$input_folder") #eg. /github/autodmg
       log_dir="${input_parent}/log"
-      mkdir -p "${log_dir}"
+      mkdir -p "${log_dir}" #eg. /github/autodmg/log
       check_pkg_scripts
     fi
   done
 }
 
-function check_pkg_scripts
+function check_out_pkg
 {
-  pkg_scripts="${pkg_source}/scripts" #eg. /github/autodmg/input/Autologin/scripts
-  if [ -d "${pkg_scripts}" ]; then
+  echo test
+}
+
+function check_pkg_scripts #eg. /github/autodmg/input/Autologin/scripts
+{
+  pkg_scripts="${pkg_source}/scripts"
+  if (path_exists "${pkg_scripts}"); then
     echo_stdout "INFO" " found ${pkg_source}"
     check_pkg_postinstall
+  else
+    echo_stdout "WARN" " no scripts found ${pkg_scripts}"
   fi
 }
 
-function check_pkg_postinstall {
-  pkg_postinstall="${pkg_source}/scripts/postinstall" #eg. /github/autodmg/input/Autologin/scripts/postinstall
-  if [ -e "${pkg_postinstall}" ]; then
+function check_pkg_postinstall #eg. /github/autodmg/input/Autologin/scripts/postinstall
+{
+  pkg_postinstall="${pkg_source}/scripts/postinstall"
+  if (path_exists "${pkg_postinstall}"); then
     echo_stdout "INFO" " found ${pkg_postinstall}"
     check_pkg_preinstall
+  else
+    echo_stdout "WARN" " no postinstall found ${pkg_postinstall}"
   fi
 }
 
-function check_pkg_preinstall {
-  pkg_preinstall="${pkg_source}/scripts/preinstall" #eg. /github/autodmg/input/Autologin/scripts/preinstall
-  if [ -e "${pkg_preinstall}" ]; then
+function check_pkg_preinstall #eg. /github/autodmg/input/Autologin/scripts/preinstall
+{
+  pkg_preinstall="${pkg_source}/scripts/preinstall"
+  if (path_exists "${pkg_preinstall}"); then
     echo_stdout "INFO" " found ${pkg_preinstall}"
     process_pkgbuild
+  else
+    echo_stdout "WARN" " no preinstall found ${pkg_preinstall}"
   fi
 }
 
+# simplify this one by splittling out the nested IF when you get time
 function process_pkgbuild {
   pkg_to_build=$(basename "${pkg_source}") #eg. Autologin
   pkg_bundle_id="${REVERSE_DOMAIN}.${pkg_to_build}" #eg. com.org.Autologin
   pkg_root="${pkg_source}/root" #eg. /github/autodmg/input/Autologin/root
-  if [ -d "${pkg_root}" ]; then
-    echo_stdout "INFO" " found ${pkg_root}"
-    output_dir="${input_parent}/output/payload"
-    mkdir -p "${output_dir}"
-    process_pkgbuild_source
-
+  if (path_exists "${pkg_root}"); then
+    pkg_prodbuild="${input_parent}/output/payload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
+    if (path_exists "${pkg_prodbuild}"); then
+      echo_stdout "SKIP" " pkg_prodbuild exists ${pkg_pkgbuild}"
+    else
+      echo_stdout "INFO" " found ${pkg_root}"
+      output_dir="${input_parent}/output/payload" #eg. /github/autodmg/output/payload
+      mkdir -p "${output_dir}"
+      process_pkgbuild_source
+    fi
   else
-    echo_stdout "INFO" " no root found ${pkg_root}"
-    output_dir="${input_parent}/output/nopayload"
-    mkdir -p "${output_dir}"
-    process_pkgbuild_tempate_nopayload
+    pkg_prodbuild="${input_parent}/output/nopayload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
+    if (path_exists "${pkg_prodbuild}"); then
+      echo_stdout "SKIP" " pkg_prodbuild exists ${pkg_pkgbuild}"
+    else
+      echo_stdout "WARN" " no root found ${pkg_root}"
+      output_dir="${input_parent}/output/nopayload" #eg. /github/autodmg/output/nopayload
+      mkdir -p "${output_dir}"
+      process_pkgbuild_tempate_nopayload
+    fi
   fi
   process_productbuild
 }
@@ -119,8 +135,9 @@ function process_pkgbuild {
 
 function process_pkgbuild_source {
   pkg_pkgbuild="${input_parent}/output/payload/${pkg_bundle_id}.pkg" #eg. /github/autodmg/output/payload/com.org.Autologin.pkg
-  pkg_prodbuild="${input_parent}/output/payload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
-  if [ ! -e "${pkg_pkgbuild}" ]; then
+  if (path_exists "${pkg_pkgbuild}"); then
+    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
+  else
     echo_stdout "PKG" " pkgbuild with payload ${pkg_bundle_id}"
     pkgbuild \
     --identifier "${pkg_bundle_id}" \
@@ -128,23 +145,20 @@ function process_pkgbuild_source {
     --scripts "${pkg_scripts}" \
     --version "${PACKAGE_VERSION}" \
     "${pkg_pkgbuild}" >> "${log_dir}/${pkg_to_build}.log"
-  else
-    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
   fi
 }
 
 function process_pkgbuild_tempate_nopayload {
   pkg_pkgbuild="${input_parent}/output/nopayload/${pkg_bundle_id}.pkg" #eg. /github/autodmg/output/payload/com.org.Dockfixup.pkg
-  pkg_prodbuild="${input_parent}/output/nopayload/${pkg_to_build}.pkg" #eg. /github/autodmg/output/Autologin.pkg
-  if [ ! -e "${pkg_pkgbuild}" ]; then
+  if (path_exists "${pkg_pkgbuild}"); then
+    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
+  else
     echo_stdout "PKG" " pkgbuild payload free ${pkg_bundle_id}"
     pkgbuild --identifier "${pkg_bundle_id}" \
     --nopayload --scripts "${pkg_scripts}" \
     --version "${PACKAGE_VERSION}" \
     "${pkg_pkgbuild}" >> "${log_dir}/${pkg_to_build}.log"
     checksum "${pkg_pkgbuild}"
-  else
-    echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
   fi
 }
 
@@ -193,16 +207,16 @@ EOPROFILE
 }
 
 function process_productbuild {
-  if [ ! -e "${pkg_prodbuild}" ]; then
-    process_productbuild_dist
-  else
+  if (path_exists "${pkg_prodbuild}"); then
     echo_stdout "SKIP" " productbuild exists ${pkg_prodbuild}"
+  else
+    process_productbuild_dist
   fi
 }
 
 function process_productbuild_dist {
   pkg_dist="${pkg_source}/distribution.dist" #eg. /github/autodmg/input/Autologin/distribution.dist
-  if [ -e "${pkg_dist}" ]; then
+  if (path_exists "${pkg_dist}"); then
     echo_stdout "INFO" " found custom DIST ${pkg_dist}";
     echo_stdout "DIST" " productbuild ${pkg_prodbuild}";
     productbuild --distribution "${pkg_dist}" \
@@ -221,11 +235,47 @@ function process_productbuild_dist {
   rm -Rf "${pkg_pkgbuild}"
 }
 
+clear
+echo_stdout "BUILD" " $(date +%Y%m%d-%H-%M-%S)"
 search_input
 
 exit 0
 
-# TAKE ANOTHER LOOK AT THIS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TAKE ANOTHER LOOK AT THIS IF WE GO TO SCCM
 
 # setup environment
 #for d in "${INPUT_DIR}" "${log_dir}" "${OUTPUT_DIR}"; do
