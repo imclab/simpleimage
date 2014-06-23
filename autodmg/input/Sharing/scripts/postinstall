@@ -40,13 +40,16 @@ defaults write "${the_daemon}" ThrottleInterval -int 900
 #
 # the motd banner
 #
-echo " " > "${path_root}/etc/motd"
-echo "${motd_banner}" >> "${path_root}/etc/motd"
-echo " " >> "${path_root}/etc/motd"
+file_motd="${path_root}/etc/motd"
+[[ -e "${file_motd}" ]] && cp -f "${file_motd}"{,."${formatted_date}"}
+echo " " > "${file_motd}"
+echo "${motd_banner}" >> "${file_motd}"
+echo " " >> "${file_motd}"
 #
 # the vnc password
 #
 the_vnc="${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
+[[ -e "${the_vnc}" ]] && cp -f "${the_vnc}"{,."${formatted_date}"}
 echo "${vnc_pwd}" > "${the_vnc}"
 [[ -e "${the_vnc}" ]] && chown -R root:wheel "${the_vnc}"
 [[ -e "${the_vnc}" ]] && chmod -R 600 "${the_vnc}"
