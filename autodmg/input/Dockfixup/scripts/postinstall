@@ -1,11 +1,12 @@
 #!/bin/bash
+#
+# disable com.apple.dockfixup
+# disable some default apps in the dock and use in conjunction with a dock template file.
+#
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
 formatted_date=$(date +"%Y%m%d%H%M%S")
-#
-# disable Dockfixup
-#
 # the plist
 the_plist="${path_root}/Library/Preferences/com.apple.dockfixup.plist"
-mv "${the_plist}" "${the_plist}.${formatted_date}"
+[[ -e "${the_plist}" ]] && mv "${the_plist}" "${the_plist}.${formatted_date}"
 
 exit 0
