@@ -1,24 +1,21 @@
-# autodmg
-packages I bundle in my "vanilla" soe via autodmg.
-
-# landfill
-misc scripts for OSX.
-
 # pkg
-misc packages for OSX.
+packages for OSX.
 
 # scripts
-misc scripts to share.
+scripts for OSX i've written & found.
+
+# soe
+packages I bundle in my "vanilla" soe via autodmg/createosxinstaller/munki/create_os_x_vm_install_dmg
 
 ### how
-Kick the tyres with build.bash
+kick the tyres with build.bash
 
 The script will recursively search the sub folders looking for a structure that confirms to my PKG template. It
 uses the built-in Apple tools pkgutil and productbuild.
 
 		Example:
 
-		autodmg
+		soe
 		|-- input
 		|    |-- YOURAPPTOPACKAGE
 		|    |-- root
