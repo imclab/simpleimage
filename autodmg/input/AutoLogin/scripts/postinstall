@@ -17,5 +17,6 @@ the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
 [[ -e "${path_root}/etc/kcpassword" ]] && chown root:wheel "${path_root}/etc/kcpassword" || exit 1
 [[ -e "${path_root}/etc/kcpassword" ]] && chmod 600 "${path_root}/etc/kcpassword" || exit 1
 [[ -e "${path_root}/etc/kcpassword.disabled" ]] && srm -f "${path_root}/etc/kcpassword.disabled"
+# maybe check if the payload worked, if it didn't remove the preference changes so this payload doesn't leave anything behind
 
 exit 0

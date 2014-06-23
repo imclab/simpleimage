@@ -1,14 +1,15 @@
 #!/bin/bash
+#
+# configure, ard and ssh. set vnc password and motd banner
+# ensure your payload (/tmp/auto_conf.plist) is configured with vnc_hash and motd_banner
+#
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
-#
-# Configure ARD and legacy VNC
-#
 vnc_pwd=$(defaults read "${path_root}/tmp/auto_conf.plist" vnc_hash)
 motd_banner=$(defaults read "${path_root}/tmp/auto_conf.plist" motd_banner)
 #
-# ard agent always
-#
-# LaunchAgent that always configures Apple Remote Desktop client to require the end user to accept an incoming connection
+# ard agent always run
+# LaunchAgent to configure Apple Remote Desktop client,
+# requires the end user to accept an incoming connection
 #
 the_agent="${path_root}/Library/LaunchAgents/com.org.ard.plist"
 defaults write "${the_agent}" KeepAlive -bool FALSE
@@ -22,18 +23,14 @@ defaults write "${the_agent}" ThrottleInterval -int 900
 [[ -e "${the_agent}" ]] && chown root:wheel "${the_agent}"
 [[ -e "${the_agent}" ]] && chmod 644 "${the_agent}"
 #
-# ssh daemon always
+# ssh daemon always run
+# LaunchDaemon to configure ssh access
 #
-# LaunchDaemon that always configures ssh access
-#
-the_daemon="${path_root}"
+the_daemon="${path_root}/Library/LaunchDaemons/com.org.ssh.plist"
 defaults write "${the_daemon}" KeepAlive -bool TRUE
 defaults write "${the_daemon}" Label "com.org.ssh"
 defaults write "${the_daemon}" ProgramArguments -array "/bin/sh" "-c" "\"sleep 10; systemsetup -setremotelogin on\""
 defaults write "${the_daemon}" RunAtLoad -bool TRUE
-# debug
-# defaults write "${the_daemon}" StandardErrorPath -string "/tmp/com.org.ssh.stderr.log"
-# defaults write "${the_daemon}" StandardOutPath -string "/tmp/com.org.ssh.stdout.log"
 defaults write "${the_daemon}" ThrottleInterval -int 900
 [[ -e "${the_daemon}" ]] && chown root:wheel "${the_daemon}"
 [[ -e "${the_daemon}" ]] && chmod 644 "${the_daemon}"
