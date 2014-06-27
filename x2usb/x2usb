@@ -63,10 +63,12 @@ fi
 [[ ! -e ${WORKING_DIR}/template.plist ]] && exit 1 || echo "template.plist found."
 
 #defaults read ${WORKING_DIR}/template.plist
-
+# Probably should have some error checking here to ensure the template.plist has values
+# TODO
 InstallESD_DMG=$(defaults read ${WORKING_DIR}/template.plist Source)
 BaseSystem_DMG="/Volumes/OS X Install ESD/BaseSystem.dmg"
-Output_PKG=$(dirname `defaults read ${WORKING_DIR}/template.plist Output`)
+Output_Directory=$(dirname `defaults read ${WORKING_DIR}/template.plist Output`)
+Output_PKG=$(defaults read ${WORKING_DIR}/template.plist Output)
 
 # mount InstallESD source
 hdiutil attach "${InstallESD_DMG}" -nobrowse -owners on
@@ -142,34 +144,34 @@ sleep 5
 echo "detaching ${BaseSystem_MKTEMP}"
 hdiutil detach "${BaseSystem_MKTEMP}" -force
 
-if [ ! -e "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" ]; then
-	echo "Converting ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
-	sudo hdiutil convert -format UDZO -o "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" "${BaseSystem_MKTEMP}.dmg"
+if [ ! -e "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" ]; then
+	echo "Converting ${BaseSystem_MKTEMP}.dmg to ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
+	sudo hdiutil convert -format UDZO -o "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" "${BaseSystem_MKTEMP}.dmg"
 	if [ $? -ne 0 ]; then
-		echo "Unable to convert ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
+		echo "Unable to convert ${BaseSystem_MKTEMP}.dmg to ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
 		XIT 1
 	else
 		sleep 5
 		sleep 5
 		rm -Rf "${BaseSystem_MKTEMP}"
 		rm -Rf "${BaseSystem_MKTEMP}.dmg"
-		sudo asr imagescan --source ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg
+		sudo asr imagescan --source ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg
 		if [ $? -ne 0 ]; then
 			echo "asr scan for restore failed."
 		fi
 	fi
 else
 	# move this higher up, no sense performing all the actions up to this point if its going to fail.
-	echo "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg already exists. Exiting."
+	echo "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg already exists. Exiting."
 	XIT 1
 fi
 
 # should I echo a bigger WARNING here? maybe...although asr does ask the tech to confirm.
-echo "Restoring ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
-sudo asr -restore -source "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -target "${1}" -erase -format HFS+ -noverify
+echo "Restoring ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
+sudo asr -restore -source "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -target "${1}" -erase -format HFS+ -noverify
 
 # copy some recources to the USB device
-echo "Restoring ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
+echo "Restoring ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
 sudo cp "${WORKING_DIR}/bash_profile" "/Volumes/${USB_Volume_Name}/var/root/.bash_profile"
 sudo mkdir /Volumes/${USB_Volume_Name}/INSTALL
 
