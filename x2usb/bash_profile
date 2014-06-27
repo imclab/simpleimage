@@ -1,3 +1,12 @@
+# This is just a template
+# TODO
+# Offer partitioning options or detect partition names for environments
+# where you now what the name is going to be.
+# Partition
+# Install/Restore
+# Bless?
+# Reboot
+
 export PS3='
    Restore a DMG/Install a PKG [1-9] or [q] to quit:'
 
