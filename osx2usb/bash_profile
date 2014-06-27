@@ -1,0 +1,39 @@
+export PS3='
+   Restore a DMG/Install a PKG [1-9] or [q] to quit:'
+
+clear
+
+# Your function here
+function asrRestore () {
+  echo "installer -pkg ${fileName} -target /"
+}
+
+# Your function here
+function osxInstall () {
+  echo "sudo asr -restore -source ${fileName} -target / -erase -format HFS+ -noverify"
+}
+
+fileList=$(find /INSTALL -maxdepth 1 -type f | grep '.dmg\|.pkg' | sed s/\\/INSTALL//g | sed s/\\///g)
+if [ $? -eq 0 ]; then
+  echo "   O S X | E N T E R P R I S E"
+  echo "   The following disk images and osx installers have been found."
+  echo " "
+else
+  clear
+fi
+select fileName in $fileList; do
+  	if [ -n "$fileName" ]; then
+    	export InstallerFile="${fileName}"
+  	fi
+  	if [[ "${fileName}" == *.pkg ]]; then
+  		osxInstall
+    else
+      clear
+  	fi
+  	if [[ "${fileName}" == *.dmg ]]; then
+  	 asrRestore
+    else
+      clear
+    fi
+  break
+done

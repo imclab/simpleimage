@@ -1,0 +1,176 @@
+#!/bin/bash
+declare -r WORKING_DIR=$(pwd)
+
+function usage() {
+clear
+cat <<EOF
+
+	Usage:
+	sudo $(basename "$0") "/VOLUMES/USBVOLUME"
+
+	Description:
+	Creates a bootable USB drive based on Apple's BaseSystem.dmg "recovery hd".
+	The GUI is customised to provide the user the ability to install a custom OSX built on
+	Greg Neagle's createOSXinstallPkg script.
+
+	Requirements:
+	- https://code.google.com/p/munki.installlionpkg
+	- Valid xml.plist for createOSXinstallPkg as per the README.txt
+	- Valid Apple InstallESD.dmg
+	- USB drive large enough to hold the InstallOSX.pkg 
+
+EOF
+}
+
+function XIT () {
+	echo "Exiting"
+	sleep 5
+	hdiutil detach "${BaseSystemDMGTEMP}" -force
+	hdiutil detach "${InstallESDDMG}" -force
+	diskutil eject "/Volumes/OS X Install ESD"
+	sleep 5
+	rm -Rf "${BaseSystemDMGTEMP}"
+	rm -Rf "${BaseSystemDMGTEMP}.dmg"
+	exit ${1}
+
+}
+
+# must sudo
+if [ $(id -u) -ne 0 ]; then
+	echo "Run this script with sudo."
+	exit 1
+fi
+
+if [ $# -eq 0 ]; then
+	usage
+	exit 1
+fi
+
+# check for specified USB
+# make this a little nicer
+if [ ! -e ${1} ]; then
+	echo "Specified USB volume not found. Exiting."
+	exit 1
+fi
+
+# maybe git clone if its missing? or give the option to. but for now just exit and provide stdout
+if [ ! -e ${WORKING_DIR}/createOSXinstallPkg ]; then
+	echo "createOSXinstallPkg not found get it here https://code.google.com/p/munki.installlionpkg/  ...exiting"
+	exit 1
+fi
+
+# template.plist must exist.
+# Refer to Greg's README.txt with regard to using createOSXinstallPkg with an "Example plist:"
+# I've done it this way to keep my script simple.
+[[ ! -e ${WORKING_DIR}/template.plist ]] && exit 1 || echo "template.plist found."
+
+#defaults read ${WORKING_DIR}/template.plist
+
+InstallESDDMG=$(defaults read ${WORKING_DIR}/template.plist Source)
+BaseSystemDMG="/Volumes/OS X Install ESD/BaseSystem.dmg"
+OutputDirectory=$(dirname `defaults read ${WORKING_DIR}/template.plist Output`)
+
+# mount InstallESD source
+hdiutil attach "${InstallESDDMG}" -nobrowse -owners on
+if [ $? -ne 0 ]; then
+	echo "Could not mount ${InstallESDDMG} so exiting"
+	XIT 1
+else
+	sleep 5
+	echo "Mounted ${InstallESDDMG} to copy BaseSystem.dmg"
+fi
+
+# copy the hidden BaseSystem.dmg from the root of InstallESD.dmg to output direct as RW
+if [ -e "${BaseSystemDMG}" ]; then
+	BaseSystemDMGTEMP="$(mktemp -d /tmp/BaseSystemDMGTEMP.XXXX)"
+	echo "Converting ${BaseSystemDMG} to RW at ${BaseSystemDMGTEMP}"
+	sudo hdiutil convert -format UDRW -o "${BaseSystemDMGTEMP}" "${BaseSystemDMG}"
+	if [ $? -ne 0 ]; then
+		echo "Unable to convert ${BaseSystemDMG} to RW at ${BaseSystemDMGTEMP}"
+		XIT 1
+	else
+		sleep 5
+		echo "Attaching ${BaseSystemDMGTEMP}.dmg to ${BaseSystemDMGTEMP}"
+		hdiutil attach "${BaseSystemDMGTEMP}.dmg" -mountpoint "${BaseSystemDMGTEMP}" -nobrowse -owners on
+		if [ $? -ne 0 ]; then
+			echo "Unable to mount ${BaseSystemDMGTEMP}.dmg to ${BaseSystemDMGTEMP}"
+			XIT 1
+		fi
+	fi
+else
+	echo "${BaseSystemDMG} not found, unable to copy. Exiting."
+fi
+
+# rename temp BaseSystem.dmg VOLUME
+# probably need something smarter her to detect /dev/disks etc
+USBVolumeName="createOSXinstallPkg2USB"
+echo "Trying to rename /Volumes/OS X Base System to ${USBVolumeName}"
+sudo diskutil rename "OS X Base System" "${USBVolumeName}"
+
+# Mod the GUI
+GUI="${BaseSystemDMGTEMP}/System/Installation/CDIS/OS X Utilities.app"
+
+# Add a custom icon
+echo "Customising ${BaseSystemDMGTEMP} icon resources."
+sudo ditto "${BaseSystemDMGTEMP}/System/Library/CoreServices/Installer.app/Contents/Resources/package.icns" "${GUI}/Contents/Resources/package.icns"
+
+# Add an entry for our Enteprise install
+echo "Customising ${BaseSystemDMGTEMP} GUI resources."
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0 dict" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0:BundlePath string" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:BundlePath /Applications/Utilities/Terminal.app" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0:DescriptionKey string" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:DescriptionKey Reinstall OS X using createOSXinstallPkg." "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0:IconName string" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:IconName package.icns" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0:Path string" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:Path /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal /createOSXinstallPkgMenu" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "add Buttons:0:TitleKey string" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:TitleKey Reinstall OS X for Enterprise" "${GUI}/Contents/Resources/Utilities.plist"
+
+# Modify Apple description.
+sudo /usr/libexec/PlistBuddy -c "set Buttons:2:DescriptionKey Reinstall a new copy of OS X from Apple." "${GUI}/Contents/Resources/Utilities.plist"
+
+# convert the temp dmg to output directory
+OperatingSystemVersion=$(defaults read "${BaseSystemDMGTEMP}/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.2 etc
+OperatingSystemBuild=$(defaults read "${BaseSystemDMGTEMP}/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
+
+sleep 5
+echo "detaching ${BaseSystemDMGTEMP}"
+hdiutil detach "${BaseSystemDMGTEMP}" -force
+
+if [ ! -e "${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" ]; then
+	echo "Converting ${BaseSystemDMGTEMP}.dmg to ${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg"
+	sudo hdiutil convert -format UDZO -o "${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" "${BaseSystemDMGTEMP}.dmg"
+	if [ $? -ne 0 ]; then
+		echo "Unable to convert ${BaseSystemDMGTEMP}.dmg to ${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg"
+		XIT 1
+	else
+		sleep 5
+		sudo asr imagescan --source ${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg
+		if [ $? -ne 0 ]; then
+			echo "asr scan for restore failed."
+		fi
+	fi
+else
+	# move this higher up, no sense performing all the actions up to this point if its going to fail.
+	echo "${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg already exists. Exiting."
+	XIT 1
+fi
+
+# should I echo a bigger WARNING here? maybe...although asr does ask the tech to confirm.
+echo "Restoring ${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg to ${1}"
+sudo asr -restore -source "${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" -target "${1}" -erase -format HFS+ -noverify
+
+# copy some recources to the USB device
+echo "Restoring ${OutputDirectory}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg to ${1}"
+sudo cp "${WORKING_DIR}/bash_profile" "/Volumes/${USBVolumeName}/var/root/.bash_profile"
+sudo mkdir /Volumes/${USBVolumeName}/INSTALL
+
+# create InstallOSX_x.x.x_xxxxx.pkg
+sudo ${WORKING_DIR}/createOSXinstallPkg --plist ${WORKING_DIR}/template.plist
+
+# copy is to the USB
+sudo cp -Rf "${OutputDirectory}" /Volumes/${USBVolumeName}/INSTALL/
+
+exit 0
