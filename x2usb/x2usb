@@ -152,7 +152,6 @@ if [ ! -e "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" ]; then
 		XIT 1
 	else
 		sleep 5
-		sleep 5
 		rm -Rf "${BaseSystem_MKTEMP}"
 		rm -Rf "${BaseSystem_MKTEMP}.dmg"
 		sudo asr imagescan --source ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg
@@ -162,23 +161,31 @@ if [ ! -e "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" ]; then
 	fi
 else
 	# move this higher up, no sense performing all the actions up to this point if its going to fail.
+	# TODO
 	echo "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg already exists. Exiting."
 	XIT 1
 fi
 
 # should I echo a bigger WARNING here? maybe...although asr does ask the tech to confirm.
+# TOTHINKABOUT
 echo "Restoring ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
 sudo asr -restore -source "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -target "${1}" -erase -format HFS+ -noverify
 
 # copy some recources to the USB device
+# error checking should probably be here
+# TODO
 echo "Restoring ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
 sudo cp "${WORKING_DIR}/bash_profile" "/Volumes/${USB_Volume_Name}/var/root/.bash_profile"
 sudo mkdir /Volumes/${USB_Volume_Name}/INSTALL
 
 # create InstallOSX_x.x.x_xxxxx.pkg
+# error checking should probably be here
+# TODO
 sudo "${WORKING_DIR}/createOSXinstallPkg" --plist "${WORKING_DIR}/template.plist"
 
 # copy is to the USB
+# error checking should probably be here
+# TODO
 sudo cp -Rf "${Output_PKG}" /Volumes/${USB_Volume_Name}/INSTALL/
 
 exit 0
