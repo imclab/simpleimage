@@ -31,7 +31,6 @@ function XIT () {
 	rm -Rf "${BaseSystem_MKTEMP}"
 	rm -Rf "${BaseSystem_MKTEMP}.dmg"
 	exit ${1}
-
 }
 
 # must sudo
@@ -140,9 +139,6 @@ sleep 5
 echo "detaching ${BaseSystem_MKTEMP}"
 hdiutil detach "${BaseSystem_MKTEMP}" -force
 
-say "detaching ${BaseSystem_MKTEMP}"
-		exit
-
 if [ ! -e "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" ]; then
 	echo "Converting ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg"
 	sudo hdiutil convert -format UDZO -o "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" "${BaseSystem_MKTEMP}.dmg"
@@ -151,6 +147,9 @@ if [ ! -e "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemB
 		XIT 1
 	else
 		sleep 5
+		sleep 5
+		rm -Rf "${BaseSystem_MKTEMP}"
+		rm -Rf "${BaseSystem_MKTEMP}.dmg"
 		sudo asr imagescan --source ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg
 		if [ $? -ne 0 ]; then
 			echo "asr scan for restore failed."
