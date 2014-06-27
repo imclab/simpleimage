@@ -17,7 +17,10 @@ cat <<EOF
 	- https://code.google.com/p/munki.installlionpkg
 	- Valid xml.plist for createOSXinstallPkg as per the README.txt
 	- Valid Apple InstallESD.dmg
-	- USB drive large enough to hold the InstallOSX.pkg 
+	- USB drive large enough to hold the InstallOSX.pkg
+
+	Acknowledgments: this was helpful.
+	- https://github.com/rtrouton/rtrouton_scripts/tree/master/rtrouton_scripts/create_os_x_vm_install_dmg
 
 EOF
 }
