@@ -103,9 +103,9 @@ fi
 
 # rename temp BaseSystem.dmg VOLUME
 # probably need something smarter here to detect /dev/disks etc
-USBVolumeName="createOSXinstallPkg2USB"
-echo "Trying to rename /Volumes/OS X Base System to ${USBVolumeName}"
-sudo diskutil rename "OS X Base System" "${USBVolumeName}"
+USB_Volume_Name="x2usb"
+echo "Trying to rename /Volumes/OS X Base System to ${USB_Volume_Name}"
+sudo diskutil rename "OS X Base System" "${USB_Volume_Name}"
 
 # Mod the GUI
 GUI="${BaseSystem_MKTEMP}/System/Installation/CDIS/OS X Utilities.app"
@@ -115,6 +115,9 @@ echo "Customising ${BaseSystem_MKTEMP} icon resources."
 sudo ditto "${BaseSystem_MKTEMP}/System/Library/CoreServices/Installer.app/Contents/Resources/package.icns" "${GUI}/Contents/Resources/package.icns"
 
 # Add an entry for our Enteprise install
+# Kinda pointless at the moment, just launches Terminal
+# Figure out a way to pass argument, but for the moment, the bash_profile
+# handles it. If /INSTALL does not contain a DMG or PKG then it won't display my menu
 echo "Customising ${BaseSystem_MKTEMP} GUI resources."
 sudo /usr/libexec/PlistBuddy -c "add Buttons:0 dict" "${GUI}/Contents/Resources/Utilities.plist"
 sudo /usr/libexec/PlistBuddy -c "add Buttons:0:BundlePath string" "${GUI}/Contents/Resources/Utilities.plist"
@@ -124,7 +127,7 @@ sudo /usr/libexec/PlistBuddy -c "set Buttons:0:DescriptionKey Reinstall OS X usi
 sudo /usr/libexec/PlistBuddy -c "add Buttons:0:IconName string" "${GUI}/Contents/Resources/Utilities.plist"
 sudo /usr/libexec/PlistBuddy -c "set Buttons:0:IconName package.icns" "${GUI}/Contents/Resources/Utilities.plist"
 sudo /usr/libexec/PlistBuddy -c "add Buttons:0:Path string" "${GUI}/Contents/Resources/Utilities.plist"
-sudo /usr/libexec/PlistBuddy -c "set Buttons:0:Path /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal /createOSXinstallPkgMenu" "${GUI}/Contents/Resources/Utilities.plist"
+sudo /usr/libexec/PlistBuddy -c "set Buttons:0:Path /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal" "${GUI}/Contents/Resources/Utilities.plist"
 sudo /usr/libexec/PlistBuddy -c "add Buttons:0:TitleKey string" "${GUI}/Contents/Resources/Utilities.plist"
 sudo /usr/libexec/PlistBuddy -c "set Buttons:0:TitleKey Reinstall OS X for Enterprise" "${GUI}/Contents/Resources/Utilities.plist"
 
@@ -132,48 +135,48 @@ sudo /usr/libexec/PlistBuddy -c "set Buttons:0:TitleKey Reinstall OS X for Enter
 sudo /usr/libexec/PlistBuddy -c "set Buttons:2:DescriptionKey Reinstall a new copy of OS X from Apple." "${GUI}/Contents/Resources/Utilities.plist"
 
 # convert the temp dmg to output directory
-OperatingSystemVersion=$(defaults read "${BaseSystem_MKTEMP}/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.2 etc
-OperatingSystemBuild=$(defaults read "${BaseSystem_MKTEMP}/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
+OS_Version=$(defaults read "${BaseSystem_MKTEMP}/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.2 etc
+OS_Build=$(defaults read "${BaseSystem_MKTEMP}/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
 
 sleep 5
 echo "detaching ${BaseSystem_MKTEMP}"
 hdiutil detach "${BaseSystem_MKTEMP}" -force
 
-if [ ! -e "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" ]; then
-	echo "Converting ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg"
-	sudo hdiutil convert -format UDZO -o "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" "${BaseSystem_MKTEMP}.dmg"
+if [ ! -e "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" ]; then
+	echo "Converting ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
+	sudo hdiutil convert -format UDZO -o "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" "${BaseSystem_MKTEMP}.dmg"
 	if [ $? -ne 0 ]; then
-		echo "Unable to convert ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg"
+		echo "Unable to convert ${BaseSystem_MKTEMP}.dmg to ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg"
 		XIT 1
 	else
 		sleep 5
 		sleep 5
 		rm -Rf "${BaseSystem_MKTEMP}"
 		rm -Rf "${BaseSystem_MKTEMP}.dmg"
-		sudo asr imagescan --source ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg
+		sudo asr imagescan --source ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg
 		if [ $? -ne 0 ]; then
 			echo "asr scan for restore failed."
 		fi
 	fi
 else
 	# move this higher up, no sense performing all the actions up to this point if its going to fail.
-	echo "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg already exists. Exiting."
+	echo "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg already exists. Exiting."
 	XIT 1
 fi
 
 # should I echo a bigger WARNING here? maybe...although asr does ask the tech to confirm.
-echo "Restoring ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg to ${1}"
-sudo asr -restore -source "${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg" -target "${1}" -erase -format HFS+ -noverify
+echo "Restoring ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
+sudo asr -restore -source "${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -target "${1}" -erase -format HFS+ -noverify
 
 # copy some recources to the USB device
-echo "Restoring ${Output_PKG}/InstallOSX_${OperatingSystemVersion}_${OperatingSystemBuild}.dmg to ${1}"
-sudo cp "${WORKING_DIR}/bash_profile" "/Volumes/${USBVolumeName}/var/root/.bash_profile"
-sudo mkdir /Volumes/${USBVolumeName}/INSTALL
+echo "Restoring ${Output_PKG}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
+sudo cp "${WORKING_DIR}/bash_profile" "/Volumes/${USB_Volume_Name}/var/root/.bash_profile"
+sudo mkdir /Volumes/${USB_Volume_Name}/INSTALL
 
 # create InstallOSX_x.x.x_xxxxx.pkg
-sudo ${WORKING_DIR}/createOSXinstallPkg --plist ${WORKING_DIR}/template.plist
+sudo "${WORKING_DIR}/createOSXinstallPkg" --plist "${WORKING_DIR}/template.plist"
 
 # copy is to the USB
-sudo cp -Rf "${Output_PKG}" /Volumes/${USBVolumeName}/INSTALL/
+sudo cp -Rf "${Output_PKG}" /Volumes/${USB_Volume_Name}/INSTALL/
 
 exit 0
