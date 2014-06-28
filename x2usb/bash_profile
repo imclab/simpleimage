@@ -1,18 +1,4 @@
-# This is just a template
-# TODO
-# Offer partitioning options or detect partition names for environments
-# where you now what the name is going to be.
-# Partition
-# Install/Restore
-# Bless?
-# Reboot
-# FINISH CODING HERE BELOW
-
-export PS3='
-   Restore a DMG/Install a PKG [1-9] or [q] to quit:'
-
-clear
-
+# This is just a template.
 # lots of variables going on here, more thought required
 # lets assume for now:
   # the person using this boot disk knows what they are doing!
@@ -20,56 +6,126 @@ clear
   # the disk is either not partitioned "Macintosh HD"
     # or the disk is partitioned "System" and "Data"
     # if it is already partitioned it was done so using standards, ie. 50%/50% or min50gb/*
-  #
+# TODO, better error checking. /dev etc
+
+autoDMG=0
+partitionType=0
+macHDPartition=0
+sysPartition=0
+dataPartition=0
+customPartition=0
+
+export PS3='
+   Restore a DMG/Install a PKG [1-9] or [q] to quit:'
+
+clear
 
 function diskManage () {
-  echo "Disks"
-  diskutil list
-  echo " "
-  echo "Volumes"
-  df -k | grep "/Volumes"
-  echo " "
-  echo -n "Looking for a DATA partition => "
-  df -k | grep "/Volumes/Data"
-  if [ $? -eq 0 ]; then
-    echo "Found what looks to be a DATA partition."
-    echo " "
-    echo -n "Looking for a SYSTEM partition => "
-    df -k | grep "/Volumes/System"
-    if [ $? -eq 0 ]; then
-      echo "Found what looks to be a SYSTEM partition."
-      echo "Assuming the partition sizes are standard."
-      ${1}
-      exit
+clear
+
+# show /dev/ some info
+echo "Devices =>"
+diskutil list
+echo "
+Volumes =>"
+df -k | grep Volumes
+
+# more than 2 existing partitions? user must specify TARGET
+volumeCount=$(df -k | grep Volumes | wc -l) 
+if [[ ${volumeCount} -gt 2 ]]; then
+  echo "
+Partitioned, but more than 2 volumes so you will need to specify the TARGET..."
+  customPartition=1
+fi
+
+if [ ${1} == asrRestore ]; then
+  autoDMG=1
+fi
+
+echo "
+Looking for a SYSTEM partition => "
+df -k | grep "/Volumes/System" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "Found."
+  sysPartition=1
+else
+  echo "Not found."
+fi
+
+echo "
+Looking for a DATA partition => "
+df -k | grep "/Volumes/Data" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "Found."
+  dataPartition=1
+else
+  echo "Not found."
+fi
+
+echo "
+Looking for a Macintosh HD partition => "
+df -k | grep "/Volumes/Macintosh\ HD" > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  echo "Found."
+  macHDPartition=1
+
+  # how big is Macintosh HD
+  echo "Checking Macintosh HD size => "
+  diskSize=$(diskutil info /Volumes/Macintosh\ HD | grep Total | awk '{print $5}' | sed s/\(//g)
+  if [[ $(($diskSize / 1073741824)) -gt 100 ]]; then
+    echo "Partition 50/50"
+    partitionType=1
+  else
+    echo "Partition 50gb/*"
+    partitionType=2
+  fi
+
+else
+  echo "Not found."
+fi
+
+#echo " "
+#echo "AutoDMG : $autoDMG"
+#echo "System Partition : $sysPartition"
+#echo "Data Partition : $dataPartition"
+#echo "Custom Partition : $customPartition"
+#echo " "
+
+if [ ${volumeCount} == 1 ]; then
+  if [ ${macHDPartition} == 1 ]; then
+    echo "diskutil eraseVolume HFS+ Macintosh\ HD /Volumes/Macintosh\ HD"
+    if [ ${partitionType} == 1 ]; then
+      echo "
+System and Data."
+      echo "diskutil resizeVolume /Volumes/Macintosh\ HD 50% HFS+ Data 0b"
     else
-      echo "Doesn't seem to be a DATA partition."
+      echo "diskutil resizeVolume /Volumes/Macintosh\ HD 50gb HFS+ Data 0b"
+    fi
+    echo 'diskutil rename "Macintosh HD" "System"'
+  else
+    echo "One partition found but its not Macintosh HD... so existing."
+    exit 1
+  fi
+else
+  if [ ${volumeCount} == 2 ]; then
+    if [ ${sysPartition} == 1 ]; then
+      echo "
+System only."
     fi
   else
-    echo "Doesn't seem to be a DATA partition."
+    echo "
+There seems to be more than 2 partitions... so exiting."
+    exit 1
   fi
+fi
 
-  # FINISH CODING HERE
 
-  diskSize=$(diskutil info /Volumes/System | grep Total | awk '{print $5}' | sed s/\(//g)
-  if [[ $(($diskSize / 1073741824)) -gt 100 ]]; then
-    echo " "
-    echo "disk larger thn 100gb, partition 50/50"
-  else
-    echo " "
-    echo "disk less than 100gb, partition 50gb/*"
-  fi
-  #diskutil eraseVolume HFS+ Macintosh\ HD /Volumes/Macintosh\ HD
-  #diskutil splitPartition /Volumes/Macintosh\ HD JHFS+ vol1 12g MS-DOS VOL2 8g JHFS+ vol3 0b
-}
+if [ ${autoDMG} == 1 ]; then
+  echo "sudo asr -restore -source /INSTALL/${fileName} -target /Volumes/System -erase -format HFS+ -noverify"
+else
+  echo "installer -pkg /INSTALL/${fileName} -target /Volumes/System"
+fi
 
-# Your function here
-function asrRestore () {
-  echo "installer -pkg ${fileName} -target /"
-}
-
-# Your function here
-function osxInstall () {
-  echo "sudo asr -restore -source ${fileName} -target / -erase -format HFS+ -noverify"
 }
 
 fileList=$(find /INSTALL -maxdepth 1 -type f | grep '.dmg\|.pkg' | sed s/\\/INSTALL//g | sed s/\\///g)
@@ -80,19 +136,16 @@ if [ $? -eq 0 ]; then
 else
   clear
 fi
+
 select fileName in $fileList; do
   	if [ -n "$fileName" ]; then
     	export InstallerFile="${fileName}"
   	fi
   	if [[ "${fileName}" == *.pkg ]]; then
   		diskManage osxInstall
-    else
-      clear
   	fi
   	if [[ "${fileName}" == *.dmg ]]; then
   	 diskManage asrRestore
-    else
-      clear
     fi
   break
 done

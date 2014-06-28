@@ -65,6 +65,17 @@ fi
 # I've done it this way to keep my script simple.
 [[ ! -e ${WORKING_DIR}/template.plist ]] && exit 1 || echo "template.plist found."
 
+# Script will prompt user if they want an additional image in .iso
+# format for use with vm.
+
+#echo "Do you also want an ISO disk image for use with VM?"
+#select yn in "Yes" "No"; do
+#	case $yn in
+#		Yes) ISO=1; break;;
+#		No ) break;;
+#	esac
+#done
+
 #defaults read ${WORKING_DIR}/template.plist
 # Probably should have some error checking here to ensure the template.plist has values
 # TODO
@@ -170,9 +181,15 @@ else
 fi
 
 # should I echo a bigger WARNING here? maybe...although asr does ask the tech to confirm.
+# need error checking, check FLASH DISK SIZE HERE
 # TOTHINKABOUT
 echo "Restoring ${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg to ${1}"
 sudo asr -restore -source "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -target "${1}" -erase -format HFS+ -noverify
+
+if [[ $ISO = 1 ]]; then
+   OUTPUT_ISO="${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.iso"
+   hdiutil convert "${Output_Directory}/InstallOSX_${OS_Version}_${OS_Build}.dmg" -format UDTO -o "$OUTPUT_ISO"
+fi
 
 # copy some recources to the USB device
 # error checking should probably be here
@@ -187,7 +204,7 @@ sudo mkdir /Volumes/${USB_Volume_Name}/INSTALL
 sudo "${WORKING_DIR}/createOSXinstallPkg" --plist "${WORKING_DIR}/template.plist"
 
 # copy is to the USB
-# error checking should probably be here
+# error checking should probably be here, check FLASH DISK SIZE
 # TODO
 sudo cp -Rf "${Output_PKG}" /Volumes/${USB_Volume_Name}/INSTALL/
 
