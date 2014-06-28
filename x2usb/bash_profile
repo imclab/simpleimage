@@ -6,11 +6,61 @@
 # Install/Restore
 # Bless?
 # Reboot
+# FINISH CODING HERE BELOW
 
 export PS3='
    Restore a DMG/Install a PKG [1-9] or [q] to quit:'
 
 clear
+
+# lots of variables going on here, more thought required
+# lets assume for now:
+  # the person using this boot disk knows what they are doing!
+  # only one dev is connected, ie. we are only concerned with /dev/disk0
+  # the disk is either not partitioned "Macintosh HD"
+    # or the disk is partitioned "System" and "Data"
+    # if it is already partitioned it was done so using standards, ie. 50%/50% or min50gb/*
+  #
+
+function diskManage () {
+  echo "Disks"
+  diskutil list
+  echo " "
+  echo "Volumes"
+  df -k | grep "/Volumes"
+  echo " "
+  echo -n "Looking for a DATA partition => "
+  df -k | grep "/Volumes/Data"
+  if [ $? -eq 0 ]; then
+    echo "Found what looks to be a DATA partition."
+    echo " "
+    echo -n "Looking for a SYSTEM partition => "
+    df -k | grep "/Volumes/System"
+    if [ $? -eq 0 ]; then
+      echo "Found what looks to be a SYSTEM partition."
+      echo "Assuming the partition sizes are standard."
+      ${1}
+      exit
+    else
+      echo "Doesn't seem to be a DATA partition."
+    fi
+  else
+    echo "Doesn't seem to be a DATA partition."
+  fi
+
+  # FINISH CODING HERE
+
+  diskSize=$(diskutil info /Volumes/System | grep Total | awk '{print $5}' | sed s/\(//g)
+  if [[ $(($diskSize / 1073741824)) -gt 100 ]]; then
+    echo " "
+    echo "disk larger thn 100gb, partition 50/50"
+  else
+    echo " "
+    echo "disk less than 100gb, partition 50gb/*"
+  fi
+  #diskutil eraseVolume HFS+ Macintosh\ HD /Volumes/Macintosh\ HD
+  #diskutil splitPartition /Volumes/Macintosh\ HD JHFS+ vol1 12g MS-DOS VOL2 8g JHFS+ vol3 0b
+}
 
 # Your function here
 function asrRestore () {
@@ -35,12 +85,12 @@ select fileName in $fileList; do
     	export InstallerFile="${fileName}"
   	fi
   	if [[ "${fileName}" == *.pkg ]]; then
-  		osxInstall
+  		diskManage osxInstall
     else
       clear
   	fi
   	if [[ "${fileName}" == *.dmg ]]; then
-  	 asrRestore
+  	 diskManage asrRestore
     else
       clear
     fi
