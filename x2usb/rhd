@@ -1,5 +1,6 @@
 #!/bin/bash
 # Create a Recovery HD for use with Virtualbox etc
+
 declare -r WORKING_DIR=$(pwd)
 BaseSystem_DMG="/Volumes/OS X Install ESD/BaseSystem.dmg"
 Template_PLIST="${WORKING_DIR}/template.plist"
@@ -47,6 +48,7 @@ if [ $# -eq 0 ]; then
 	if [ -e "${Template_PLIST}" ]; then
 		echo "template.plist found."
 		export InstallESD_DMG=$(defaults read ${WORKING_DIR}/template.plist Source)
+		ISO=1
 	else
 		usage
 	fi
@@ -144,6 +146,7 @@ fi
 if [[ $ISO = 1 ]]; then
    OUTPUT_ISO="${Output_Directory}/RecoveryHD_${OS_Version}_${OS_Build}.iso"
    hdiutil convert "${Output_Directory}/RecoveryHD_${OS_Version}_${OS_Build}.dmg" -format UDTO -o "$OUTPUT_ISO"
+   mv "${OUTPUT_ISO}.cdr" "${OUTPUT_ISO}"
 fi
 
 exit 0
