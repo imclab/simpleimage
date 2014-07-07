@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>motd_banner</key>
+	<string>Unauthorised access to these resources is prohibited.</string>
+	<key>vnc_hash</key>
+	<string>VNCHASHHERE</string>
+</dict>
+</plist>

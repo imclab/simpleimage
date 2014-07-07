@@ -1,6 +1,5 @@
 .DS_Store
 *.log
 *.pkg
-auto_conf.plist
 kcpassword.*
 *.mobileconfig

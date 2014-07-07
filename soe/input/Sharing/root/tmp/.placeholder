@@ -1,3 +1,0 @@
-# auto_conf.plist goes here.
-auto_conf.plist should contain a string value (vnc_hash) consisting of your vnc password hash.
-auto_conf.plist should contain a string value (motd_banner) containing your motd banner text.
