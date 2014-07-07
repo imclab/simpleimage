@@ -44,7 +44,7 @@ function search_input  #eg. ./input
   done
 }
 
-function search_pkg_template #eg. ./input/Autologin
+function search_pkg_template #eg. ./input/EnableAutologin
 {
   for pkg_source in $(find "${input_folder}" -type d -maxdepth 1); do
     is_in_input=$(basename "${input_folder}") #eg. input
@@ -63,7 +63,7 @@ function check_out_pkg
   echo test
 }
 
-function check_pkg_scripts #eg. ./input/Autologin/scripts
+function check_pkg_scripts #eg. ./input/EnableAutologin/scripts
 {
   pkg_scripts="${pkg_source}/scripts"
   if (path_exists "${pkg_scripts}"); then
@@ -74,7 +74,7 @@ function check_pkg_scripts #eg. ./input/Autologin/scripts
   fi
 }
 
-function check_pkg_postinstall #eg. ./input/Autologin/scripts/postinstall
+function check_pkg_postinstall #eg. ./input/EnableAutologin/scripts/postinstall
 {
   pkg_postinstall="${pkg_source}/scripts/postinstall"
   if (path_exists "${pkg_postinstall}"); then
@@ -85,7 +85,7 @@ function check_pkg_postinstall #eg. ./input/Autologin/scripts/postinstall
   fi
 }
 
-function check_pkg_preinstall #eg. ./input/Autologin/scripts/preinstall
+function check_pkg_preinstall #eg. ./input/EnableAutologin/scripts/preinstall
 {
   pkg_preinstall="${pkg_source}/scripts/preinstall"
   if (path_exists "${pkg_preinstall}"); then
@@ -98,9 +98,9 @@ function check_pkg_preinstall #eg. ./input/Autologin/scripts/preinstall
 
 # simplify this one by splittling out the nested IF when you get time
 function process_pkgbuild {
-  pkg_to_build=$(basename "${pkg_source}") #eg. Autologin
-  pkg_bundle_id="${REVERSE_DOMAIN}.${pkg_to_build}" #eg. com.org.Autologin
-  pkg_root="${pkg_source}/root" #eg. ./input/Autologin/root
+  pkg_to_build=$(basename "${pkg_source}") #eg. EnableAutologin
+  pkg_bundle_id="${REVERSE_DOMAIN}.${pkg_to_build}" #eg. com.org.EnableAutologin
+  pkg_root="${pkg_source}/root" #eg. ./input/EnableAutologin/root
   if (path_exists "${pkg_root}"); then
     pkg_prodbuild="${input_parent}/${pkg_to_build}.pkg" #eg. ./Autologin.pkg
     if (path_exists "${pkg_prodbuild}"); then
@@ -112,7 +112,7 @@ function process_pkgbuild {
       process_pkgbuild_source
     fi
   else
-    pkg_prodbuild="${input_parent}/${pkg_to_build}.pkg" #eg. ./Autologin.pkg
+    pkg_prodbuild="${input_parent}/${pkg_to_build}.pkg" #eg. ./EnableAutologin.pkg
     if (path_exists "${pkg_prodbuild}"); then
       echo_stdout "SKIP" " pkg_prodbuild exists ${pkg_pkgbuild}"
     else
@@ -127,7 +127,7 @@ function process_pkgbuild {
 
 
 function process_pkgbuild_source {
-  pkg_pkgbuild="${input_parent}/${pkg_bundle_id}.pkg" #eg. ./com.org.Autologin.pkg
+  pkg_pkgbuild="${input_parent}/${pkg_bundle_id}.pkg" #eg. ./com.org.EnableAutologin.pkg
   if (path_exists "${pkg_pkgbuild}"); then
     echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
   else
@@ -142,7 +142,7 @@ function process_pkgbuild_source {
 }
 
 function process_pkgbuild_tempate_nopayload {
-  pkg_pkgbuild="${input_parent}/${pkg_bundle_id}.pkg" #eg. ./com.org.Dockfixup.pkg
+  pkg_pkgbuild="${input_parent}/${pkg_bundle_id}.pkg" #eg. ./com.org.DisableDockfixup.pkg
   if (path_exists "${pkg_pkgbuild}"); then
     echo_stdout "SKIP" " pkgbuild exists ${pkg_pkgbuild}"
   else
@@ -208,7 +208,7 @@ function process_productbuild {
 }
 
 function process_productbuild_dist {
-  pkg_dist="${pkg_source}/distribution.dist" #eg. ./input/Autologin/distribution.dist
+  pkg_dist="${pkg_source}/distribution.dist" #eg. ./input/EnableAutologin/distribution.dist
   if (path_exists "${pkg_dist}"); then
     echo_stdout "INFO" " found custom DIST ${pkg_dist}";
     echo_stdout "DIST" " productbuild ${pkg_prodbuild}";
