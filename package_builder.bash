@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#+ automates pkgbuild/productbuild/cmmac builds
+#++ automates pkgbuild/productbuild/cmmac builds
 
 declare -r REVERSE_DOMAIN="com.org"					# reverse domain for bundle ids etc.
 declare -r PACKAGE_VERSION=$(date +"%Y%m%d%H%M%S")	# dynamic version number based on the date !important, used in detection
@@ -11,14 +11,14 @@ function echo_stdout
 {
   [[ ${1} == "DIST" ]] && echo "[   ${1}   ] ${2}"
   [[ ${1} == "INFO" ]] && echo "[   ${1}   ] ${2}"
-  #[[ ${1} == "SKIP" ]] && echo "[   ${1}   ] ${2}"
-  #[[ ${1} == "WARN" ]] && echo "[   ${1}   ] ${2}"
+  [[ ${1} == "SKIP" ]] && echo "[   ${1}   ] ${2}"
+  [[ ${1} == "WARN" ]] && echo "[   ${1}   ] ${2}"
   [[ -e ${log_dir} ]] && echo $(date +"%Y%m%d-%H-%M-%S") >> "${log_dir}/DEBUG.log"
   [[ -e ${log_dir} ]] && echo "[   ${1}   ] ${2}" >> "${log_dir}/DEBUG.log"
 }
 
-# returns path true/false
-# 1 args: path
+#++ returns path true/false
+#++ 1 args: path
 function path_exists
 {
   if [ -e "${1}" ]; then
@@ -28,9 +28,9 @@ function path_exists
   fi
 }
 
-# sha1 checksum
-# 1 args: path
-# !think about using it in err checking
+#++ sha1 checksum
+#++ 1 args: path
+#++ !think about using it in err checking
 function checksum
 {
     openssl sha1 "${1}" >> "${log_dir}/${pkg_to_build}.log"
@@ -96,7 +96,7 @@ function check_pkg_preinstall #eg. ./input/EnableAutologin/scripts/preinstall
   fi
 }
 
-# simplify this one by splittling out the nested IF when you get time
+#++ simplify this one by splittling out the nested IF when you get time
 function process_pkgbuild {
   pkg_to_build=$(basename "${pkg_source}") #eg. EnableAutologin
   pkg_bundle_id="${REVERSE_DOMAIN}.${pkg_to_build}" #eg. com.org.EnableAutologin

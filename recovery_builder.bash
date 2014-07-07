@@ -1,8 +1,9 @@
 #!/bin/bash
-# Create a custom Recovery HD as a utility to;
-# Use createOSXinstaller
-# Use AutoDMG
-# Use Virtualbox
+
+#++ Create a custom Recovery HD as a utility to;
+#++ Use createOSXinstaller
+#++ Use AutoDMG
+#++ Use Virtualbox
 
 current_directory=$(dirname $0) #++ use current working directory
 if [[ $current_directory == "." ]]; then
@@ -15,7 +16,7 @@ osx_build=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductBu
 basesystem_dmg="/Volumes/OS X Install ESD/BaseSystem.dmg" # APPLE'S BASE SYSTEM, THE BOOTABLE RECOVERY OS
 target_dmg=~/Desktop/${osx_version}_${osx_build}_recovery.dmg
 
-# must sudo
+#++ must sudo
 if [[ $(id -u) -ne 0 ]]; then
 	echo "Run this script with sudo."
 	exit 1
@@ -85,8 +86,8 @@ if [ $? -ne 0 ]; then
 fi
 sleep 5
 
-# rename temp BaseSystem.dmg VOLUME
-# probably need something smarter here to detect /dev/disks etc
+#++ rename temp BaseSystem.dmg VOLUME
+#++ probably need something smarter here to detect /dev/disks etc
 sudo diskutil rename "OS X Base System" "Custom OS X Base System"
 if [ $? -ne 0 ]; then
 	echo "error renaming '/Volumes/OS X Base System' to 'Custom OS X Base System'"
