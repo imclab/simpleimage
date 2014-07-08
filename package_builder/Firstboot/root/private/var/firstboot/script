@@ -23,7 +23,7 @@ formatted_date=$(date +"%Y%m%d%H%M%S")
 #
 # verbose boot
 #
-sudo nvram boot-args="-v"
+#sudo nvram boot-args="-v"
 
 #
 # enable ssh

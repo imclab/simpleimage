@@ -329,49 +329,4 @@ function build_vendor_cmmac {
   fi
 }
 
-# download vendors
-# !think about microsoft remote desktop type vendors, ie pkg in dmg
-function build_vendor_download
-{
-# skip if OUTPUT distribution exists
-if (path_exists "${out_productbuild_pkg}"); then
-  echo_stdout "SKIP" " out_productbuild_pkg exists: ${out_productbuild_pkg}";
-else
-  if (path_exists "${vendor}"); then
-    vendor_url=$(defaults read "${vendor}" vendor_url)
-    vendor_type=$(defaults read "${vendor}" vendor_type)
-    vendor_volume=$(defaults read "${vendor}" vendor_volume)
-    vendor_payload=$(defaults read "${vendor}" vendor_payload)
-    vendor_target=$(defaults read "${vendor}" vendor_target)
-
-    echo_stdout "DOWN" " vendor, building : ${vendor}";
-    mkdir -p "${build_root}/${vendor_target}"
-    curl -L -o "${build_root}/vendor.${vendor_type}" "${vendor_url}"
-
-    if [ "${vendor_type}" == "dmg" ]; then
-      hdiutil attach -noautofsck -nobrowse -noverify -readonly "${build_root}/vendor.${vendor_type}"
-      ditto "/Volumes/${vendor_volume}/${vendor_payload}" "${build_root}/${vendor_target}/${vendor_payload}" >> "${log_dir}/${application}.log"
-      vendor_disk=$(df -k | grep "${vendor_volume}" | awk '{print $1}')
-      hdiutil detach "${vendor_disk}" -force
-    else
-      if [ "${vendor_type}" == "zip" ]; then
-        ditto -V -x -k --sequesterRsrc --rsrc "${build_root}/vendor.${vendor_type}" "${build_root}/${vendor_target}/" >> "${log_dir}/${application}.log"
-      fi
-    fi
-    build_version=$(defaults read "${build_root}/${vendor_target}/${vendor_payload}/Contents/info.plist" CFBundleShortVersionString)
-
-    # !think about naming versions
-    #out_pkgbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.pkg"
-    #out_productbuild_pkg="${OUTPUT_DIR}/${bundle_identifier}${build_version}.dist.pkg"
-    #output_cmmac="${out_productbuild_pkg}.cmmac"
-
-    sudo rm -Rf "${build_root}/vendor.${vendor_type}"
-
-    #rm -Rf "${INPUT_DIR}/${application}/root"
-    #rm -Rf "${INPUT_DIR}/${application}/scripts"
-    # add key for option to go straight to cmmac from dmg or pkg + key to do custom build too
-  fi
-fi
-}
-
 exit 0
