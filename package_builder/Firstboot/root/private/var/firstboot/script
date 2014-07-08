@@ -243,15 +243,21 @@ if [[ -d "/private/var/firstboot" ]]; then
 	scutil --set LocalHostName "${device_macaddress}"
 	scutil --set HostName "${device_macaddress}"
 	hostname "${device_macaddress}"
+	
 	# netbios...keep it short
 	defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "${device_macaddress}"
 
 	# shortname in Connect to Server dialog
 	# just to keep it consistent for end users 
-	the_plist="/Library/Preferences/com.apple.NetworkAuthorization.plist"
-	[[ -e "${the_plist}" ]] && cp -f "${the_plist}"{,."${formatted_date}"}
-	defaults write "${the_plist}" UseDefaultName -bool NO
-	defaults write "${the_plist}" UseShortName -bool YES
+	defaults write /Library/Preferences/com.apple.NetworkAuthorization.plist UseDefaultName -bool NO
+	defaults write /Library/Preferences/com.apple.NetworkAuthorization.plist UseShortName -bool YES
+
+	# hide local admin users
+	# disable external accounts (i.e. accounts stored on drives other than the boot drive.)
+	# additional loginwindow system information
+	defaults write /Library/Preferences/com.apple.loginwindow.plist Hide500Users -bool YES
+	defaults write /Library/Preferences/com.apple.loginwindow.plist EnableExternalAccounts -bool NO
+	defaults write /Library/Preferences/com.apple.loginwindow.plist AdminHostInfo "DSStatus"
 
 	#
 	# pkgs
@@ -270,16 +276,6 @@ if [[ -d "/private/var/firstboot" ]]; then
 	#[[ -e "/private/var/firstboot/vpn.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/vpn.mobileconfig"
 	# wifi
 	#[[ -e "/private/var/firstboot/wifi.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/wifi.mobileconfig"
-
-	# hide local admin users
-	# disable external accounts (i.e. accounts stored on drives other than the boot drive.)
-	# additional loginwindow system information
-	# the plist
-	the_plist="/Library/Preferences/com.apple.loginwindow.plist"
-	[[ -e "${the_plist}" ]] && cp -f "${the_plist}"{,."${formatted_date}"}
-	defaults write "${the_plist}" Hide500Users -bool YES
-	defaults write "${the_plist}" EnableExternalAccounts -bool NO
-	defaults write "${the_plist}" AdminHostInfo "DSStatus"
 	
 	#
 	# email
@@ -312,8 +308,7 @@ if [[ -d "/private/var/firstboot" ]]; then
 	#
 	# kickstart sharing
 	#
-	ardoff
-	ardon
+	sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -GenerateReports -ChangeSettings -SendFiles -TextMessages -DeleteFiles -clientopts -setvnclegacy -vnclegacy no -setreqperm -reqperm yes -setmenuextra -menuextra yes -restart -agent
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text1 "${device_model} - CPU: ${device_cpu} RAM: ${device_ram}"
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text2 "${device_serial}"
 

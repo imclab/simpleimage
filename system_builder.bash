@@ -110,6 +110,13 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 
+#++ asr scan
+sudo asr imagescan --source ${target_dmg}
+if [ $? -ne 0 ]; then
+	echo "asr scan for restore failed."
+fi
+sleep 5
+
 #++ cleanup
 rm ~/Desktop/os.sparseimage
 
