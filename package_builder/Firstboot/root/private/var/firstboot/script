@@ -308,7 +308,8 @@ if [[ -d "/private/var/firstboot" ]]; then
 	#
 	# kickstart sharing
 	#
-	sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -GenerateReports -ChangeSettings -SendFiles -TextMessages -DeleteFiles -clientopts -setvnclegacy -vnclegacy no -setreqperm -reqperm yes -setmenuextra -menuextra yes -restart -agent
+	/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -all -clientopts -setvnclegacy -vnclegacy yes
+	/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -restart -agent
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text1 "${device_model} - CPU: ${device_cpu} RAM: ${device_ram}"
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text2 "${device_serial}"
 
