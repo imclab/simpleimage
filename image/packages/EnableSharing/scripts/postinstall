@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#++ configure, ard and ssh. set vnc password and motd banner
+# ensure your payload (/tmp/EnableSharing.plist) is configured with vnc_hash and motd_banner
+
+path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi #++ fix //
+vnc_pwd=$(defaults read "${path_root}/tmp/EnableSharing.plist" vnc_hash)
+motd_banner=$(defaults read "${path_root}/tmp/EnableSharing.plist" motd_banner)
+
+#++ ard agent always run
+#++ LaunchAgent to configure Apple Remote Desktop client,
+#++ requires the end user to accept an incoming connection
+the_agent="${path_root}/Library/LaunchAgents/com.org.ard.plist"
+defaults write "${the_agent}" KeepAlive -bool FALSE
+defaults write "${the_agent}" Label "com.org.ard"
+defaults write "${the_agent}" ProgramArguments -array "/bin/sh" "-c" "/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -GenerateReports -ChangeSettings -SendFiles -TextMessages -DeleteFiles -clientopts -setvnclegacy -vnclegacy no -setreqperm -reqperm yes -setmenuextra -menuextra yes -restart -agent"
+defaults write "${the_agent}" RunAtLoad -bool TRUE
+# debug
+#defaults write "${the_agent}" StandardErrorPath -string "/tmp/com.org.ard.stderr.log"
+#defaults write "${the_agent}" StandardOutPath -string "/tmp/com.org.ard.stdout.log"
+defaults write "${the_agent}" ThrottleInterval -int 900
+[[ -e "${the_agent}" ]] && chown root:wheel "${the_agent}"
+[[ -e "${the_agent}" ]] && chmod 644 "${the_agent}"
+
+#++ ssh daemon always run
+#++ LaunchDaemon to configure ssh access
+the_daemon="${path_root}/Library/LaunchDaemons/com.org.ssh.plist"
+defaults write "${the_daemon}" KeepAlive -bool TRUE
+defaults write "${the_daemon}" Label "com.org.ssh"
+defaults write "${the_daemon}" ProgramArguments -array "/bin/sh" "-c" "\"sleep 10; systemsetup -setremotelogin on\""
+defaults write "${the_daemon}" RunAtLoad -bool TRUE
+defaults write "${the_daemon}" ThrottleInterval -int 900
+[[ -e "${the_daemon}" ]] && chown root:wheel "${the_daemon}"
+[[ -e "${the_daemon}" ]] && chmod 644 "${the_daemon}"
+
+#++ the motd banner
+file_motd="${path_root}/etc/motd"
+[[ -e "${file_motd}" ]] && cp -f "${file_motd}"{,."${formatted_date}"}
+echo " " > "${file_motd}"
+echo "${motd_banner}" >> "${file_motd}"
+echo " " >> "${file_motd}"
+
+#++ the vnc password...kill this?
+the_vnc="${path_root}/Library/Preferences/com.apple.VNCSettings.txt"
+[[ -e "${the_vnc}" ]] && cp -f "${the_vnc}"{,."${formatted_date}"}
+echo "${vnc_pwd}" > "${the_vnc}"
+[[ -e "${the_vnc}" ]] && chown -R root:wheel "${the_vnc}"
+[[ -e "${the_vnc}" ]] && chmod -R 600 "${the_vnc}"
+
+#++ always new existing session control
+defaults write "${path_root}/Library/Preferences/com.apple.RemoteManagement.plist" VNCAlwaysStartOnConsole -bool true
+
+exit 0
