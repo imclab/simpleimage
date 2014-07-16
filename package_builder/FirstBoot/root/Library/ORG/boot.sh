@@ -1,9 +1,6 @@
 #!/bin/bash
-# execute during first boot, self destruct
+#++ execute during first boot, self destruct
 
-#
-# vars
-#
 default_nameserver=$(cat /etc/resolv.conf 2>/dev/null | awk '/^domain/ { print $2 }')
 default_domain=$(sed 's/[^.]*\.\([^.]*\)\..*/\1/' <<< "${default_nameserver}")
 device_os=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9 etc
@@ -20,8 +17,7 @@ device_fw1=$(/usr/sbin/ipconfig getifaddr fw1)
 device_utun0=$(ifconfig | grep -A1 'utun0' | grep -A1 'inet' | awk '{print $2}')
 formatted_date=$(date +"%Y%m%d%H%M%S")
 
-#
-# boot script
+#++ boot script marker
 booted="/Library/ORG/boot.plist"
 if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	
@@ -76,29 +72,25 @@ if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	# Laptop?
 	ioreg -rd1 -c IOPlatformExpertDevice | grep -E model | awk '{print $3}' | sed s/\<\"// | sed s/\"\>// | grep "Book"
 	if [ "$?" == "1" ]; then
-		# com.apple.systemuiserver.${UUID}.plist for non-laptop
+		#++ non-laptop
 		defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.systemuiserver" "dontAutoLoad" -array-add -string "/System/Library/CoreServices/Menu Extras/AirPort.menu"
 		defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.systemuiserver" "dontAutoLoad" -array-add -string "/System/Library/CoreServices/Menu Extras/VPN.menu"
 		defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.systemuiserver" "dontAutoLoad" -array-add -string "/System/Library/CoreServices/Menu Extras/Battery.menu"
 	else
-		# com.apple.systemuiserver.plist for laptop
+		#++ laptop
 		defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/AirPort.menu"
 		defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/VPN.menu"
 		defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/Battery.menu"
 	fi
-	# com.apple.screensaver.${UUID}.plist
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" idleTime -int "1800"
-	# com.apple.screensaver.${UUID}.plist
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" CleanExit -string "YES"
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" PrefsVersion -int "100"
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" "moduleDict" -dict-add "moduleName" -string "Computer Name"
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" "moduleDict" -dict-add "path" -string "/System/Library/Frameworks/ScreenSaver.framework/Resources/Computer Name.saver"
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.screensaver" "moduleDict" -dict-add "type" -int "0"
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.ScreenSaver.Basic" "MESSAGE" -string "${MESSAGE}"
-	# com.apple.screensaver.plist
 	defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.screensaver" askForPassword -int 1
 	defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.screensaver" askForPasswordDelay -int 0
-	# com.apple.systempreferences.plist
 	defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systempreferences" HiddenPreferencePanes -array "com.apple.prefs.backup" "com.apple.preferences.icloud" "com.apple.preference.internet" "com.apple.preferences.internetaccounts" "com.apple.preferences.sharing" "com.apple.preferences.appstore" "com.apple.preferences.softwareupdate" "com.apple.preferences.parentalcontrols" "com.apple.preference.startupdisk" "com.NT-Ware.UniFLOWMacClientConfig"
 	
 	#++ iCloud fix for users updated from older OS's
@@ -119,9 +111,9 @@ if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	do
 		if [ -d "/Users/${i}" ]; then
 			if [ -f "/Users/${i}/.account" ]; then
-				srm -f "/Users/${i}/.account"
-				dscl . -delete /Users/${i}
-				chown -R "${i}" "/Users/${i}"
+				sudo srm -f "/Users/${i}/.account"
+				sudo dscl . -delete /Users/${i}
+				sudo chown -R "${i}" "/Users/${i}"
 			fi
 		fi
 	done
@@ -129,11 +121,11 @@ if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	#++ dslocal local groups etc
 	dscl . -create /Groups/PowerUsers
 	dscl . -create /Groups/PowerUsers PrimaryGroupID 1000
-	# add local administrators to the PowerUsers
+	#++ add local administrators to the PowerUsers
 	dseditgroup -o edit -a admin -t group PowerUsers
-	# add everyone as printer managers
+	#++ add everyone as printer managers
 	dseditgroup -o edit -a everyone -t group lpadmin
-	# add a user if you want to later...
+	#++ add a user if you want to later...
 	#dseditgroup -o edit -a cgerke -t user PowerUsers
 
 	#++ authorization
@@ -221,21 +213,6 @@ if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	#defaults write /Library/Preferences/com.apple.loginwindow StartupDelay -int 13
 	#++ text
 	defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "Unauthorised access to these resources is prohibited."
-
-	#++ pkgs
-	#++ adding directly to autodmg now.
-	#installer -dumplog -verbose -pkg "/Library/ORG/boot.sh/CreateLionUser.pkg" -target /
-	
-	#++ profiles, maybe can't load them until you have Finder
-	#the_finder=$(ps -ax | grep "Finder.app" | grep -v grep | cut -d "/" -f5)
-	#if [ "${the_finder}" != "Finder.app" ]; then
-	#	echo "No finder yet."
-	#	exit 1
-	#fi
-	# vpn
-	#[[ -e "/Library/ORG/boot.sh/vpn.mobileconfig" ]] && profiles -I -F "/Library/ORG/boot.sh/vpn.mobileconfig"
-	# wifi
-	#[[ -e "/Library/ORG/boot.sh/wifi.mobileconfig" ]] && profiles -I -F "/Library/ORG/boot.sh/wifi.mobileconfig"
 	
 	#++ reset loginwindow
 	defaults delete "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments
