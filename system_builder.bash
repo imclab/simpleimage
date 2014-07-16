@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #+ create read write sparse disk
-#+ mount installesd.dmg in current working directory, use the system version naming convention.
+#+ mount installesd.dmg, use the system version naming convention.
 #+ install OSInstall.mpkg
 #+ install packages in current working directory.
 #+ convert sparse disk to read only compressed disk.

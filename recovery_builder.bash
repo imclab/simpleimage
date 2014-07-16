@@ -123,7 +123,8 @@ if [ $? -ne 0 ]; then
 fi
 sleep 5
 
-if [[ ${ISO} = 1 ]]; then
+#++ create iso for virtualbox
+if [[ ${2} == "--iso" ]]; then
    hdiutil convert "${target_dmg}" -format UDTO -o "${target_dmg}.iso"
    mv "${target_dmg}.iso.cdr" "${target_dmg}.iso"
 fi

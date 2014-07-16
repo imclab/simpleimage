@@ -21,58 +21,39 @@ device_utun0=$(ifconfig | grep -A1 'utun0' | grep -A1 'inet' | awk '{print $2}')
 formatted_date=$(date +"%Y%m%d%H%M%S")
 
 #
-# verbose boot
-#
-#sudo nvram boot-args="-v"
-
-#
-# enable ssh
-#
-#systemsetup -setremotelogin on
-
-#
 # boot script
-#
-if [[ -d "/private/var/firstboot" ]]; then
+booted="/Library/ORG/boot.plist"
+if [[ ! -e "/Library/ORG/boot.plist" ]]; then
 	
-	#
-	# notify boot
-	# used by /usr/local/bin/email.pl
-	#
-	sos_log="/usr/local/bin/sos.txt"
-	echo "BOOTED" > "${sos_log}"
-	echo "SERIAL:       ${device_serial}" >> "${sos_log}"
-	echo "MACADDRESS:   ${device_macaddress}" >> "${sos_log}"
-	echo "MODEL:        ${device_model}" >> "${sos_log}"
-	echo "OS VERSION:   ${device_os}" >> "${sos_log}"
-	echo "OS BUILD:     ${device_build}" >> "${sos_log}"
-	echo "RAM:          ${device_ram}" >> "${sos_log}"
-	echo "CPU:          ${device_cpu}" >> "${sos_log}"
-	echo " " >> "${sos_log}"
-	echo "en0,en1,vpn:  ${device_en0} ${device_en1} ${device_vpn}" >> "${sos_log}"
-	echo " " >> "${sos_log}"
+	#++ log... maybe email it
+	defaults write /Library/ORG/boot.plist serial "${device_serial}"
+	defaults write /Library/ORG/boot.plist macaddress "${device_macaddress}"
+	defaults write /Library/ORG/boot.plist model "${device_model}"
+	defaults write /Library/ORG/boot.plist os "${device_os}"
+	defaults write /Library/ORG/boot.plist build "${device_build}"
+	defaults write /Library/ORG/boot.plist ram "${device_ram}"
+	defaults write /Library/ORG/boot.plist cpu "${device_cpu}"
+	defaults write /Library/ORG/boot.plist en0 "${device_en0}"
+	defaults write /Library/ORG/boot.plist en1 "${device_en1}"
+	defaults write /Library/ORG/boot.plist utun0 "${device_utun0}"
 	
-	#
-	# disable spotlight to speed up the localisation
-	#
+	#++ disable spotlight to speed up the localisation
 	#mdutil -ad
 	#mdutil -ai off
 	
-	#
-	# energy saver
-	#
+	#++ energy saver
 	pmset -a autorestart 0
 	pmset -a disksleep 0
 	pmset -a displaysleep 90
 	pmset -a powerbutton 0
 	pmset -a sleep 0
 	pmset -a womp 0
-	# Laptop?
+	#++ Laptop?
 	ioreg -rd1 -c IOPlatformExpertDevice | grep -E model | awk '{print $3}' | sed s/\<\"// | sed s/\"\>// | grep "Book"
 	if [ "$?" == "1" ]; then
 		echo "desktop"
 	else
-		# battery
+		#++ battery
 		pmset -b autorestart 0
 		pmset -b disksleep 0
 		pmset -b displaysleep 90
@@ -81,22 +62,16 @@ if [[ -d "/private/var/firstboot" ]]; then
 		pmset -b womp 0
 	fi
 	
-	#
-	# disable gatekeeper
-	#
+	#++ disable gatekeeper
 	/usr/sbin/spctl --master-disable
 
-	#
-	# disable softwareupdate
-	#
+	#++ disable softwareupdate
 	/usr/sbin/softwareupdate --schedule off
 	
-	#
-	# user template
-	#
+	#++ user template
 	mkdir "/System/Library/User Template/English.lproj/Library/Preferences/ByHost"
 
-	# com.apple.systemuiserver.${UUID}.plist
+	#++ menu extras
 	defaults -currentHost write "/System/Library/User Template/English.lproj/Library/Preferences/ByHost/com.apple.systemuiserver" "dontAutoLoad" -array-add -string "/System/Library/CoreServices/Menu Extras/TimeMachine.menu"
 	# Laptop?
 	ioreg -rd1 -c IOPlatformExpertDevice | grep -E model | awk '{print $3}' | sed s/\<\"// | sed s/\"\>// | grep "Book"
@@ -126,20 +101,32 @@ if [[ -d "/private/var/firstboot" ]]; then
 	# com.apple.systempreferences.plist
 	defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systempreferences" HiddenPreferencePanes -array "com.apple.prefs.backup" "com.apple.preferences.icloud" "com.apple.preference.internet" "com.apple.preferences.internetaccounts" "com.apple.preferences.sharing" "com.apple.preferences.appstore" "com.apple.preferences.softwareupdate" "com.apple.preferences.parentalcontrols" "com.apple.preference.startupdisk" "com.NT-Ware.UniFLOWMacClientConfig"
 	
-	#
-	# reset os fonts just-in-case
-	#
-	#fontrestore default
+	#++ iCloud fix for users updated from older OS's
+	for i in `ls /Users`
+		do
+		 if [ -d "/Users/${i}/Library/Preferences" ]; then
+			sudo defaults write "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist" DidSeeCloudSetup -bool true
+			sudo defaults write "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist" GestureMovieSeen none
+			sudo defaults write "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist" LastSeenCloudProductVersion "${device_os}"
+			sudo defaults write "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist" LastPreLoginTasksPerformedVersion "${device_os}"
+			sudo defaults write "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist" LastPreLoginTasksPerformedBuild "${device_build}"
+			sudo chown "${i}" "/Users/${i}/Library/Preferences/com.apple.SetupAssistant.plist"
+		fi
+	done
 
-	#
-	# disable os font protection
-	#
-	#atsutil fontprotection -off
-
-	#
-	# dslocal Local groups etc
-	#
-	# dscl
+	# Clean existing .accounts...remove this eventually.
+	for i in `ls /Users`
+	do
+		if [ -d "/Users/${i}" ]; then
+			if [ -f "/Users/${i}/.account" ]; then
+				srm -f "/Users/${i}/.account"
+				dscl . -delete /Users/${i}
+				chown -R "${i}" "/Users/${i}"
+			fi
+		fi
+	done
+	
+	#++ dslocal local groups etc
 	dscl . -create /Groups/PowerUsers
 	dscl . -create /Groups/PowerUsers PrimaryGroupID 1000
 	# add local administrators to the PowerUsers
@@ -149,9 +136,7 @@ if [[ -d "/private/var/firstboot" ]]; then
 	# add a user if you want to later...
 	#dseditgroup -o edit -a cgerke -t user PowerUsers
 
-	#
-	# authorization
-	#
+	#++ authorization
 	#security authorizationdb read system.preferences > "/usr/local/bin/authorizationdb.${formatted_date}.system.preferences.plist"
 	security authorizationdb write system.preferences allow
 	#security authorizationdb read system.preferences.accessibility > "/usr/local/bin/authorizationdb.${formatted_date}.system.preferences.accessibility.plist"
@@ -197,32 +182,7 @@ if [[ -d "/private/var/firstboot" ]]; then
 	#security authorizationdb read com.apple.SoftwareUpdate.scan > "/usr/local/bin/authorizationdb.${formatted_date}.com.apple.SoftwareUpdate.scan.plist"
 	#security authorizationdb write com.apple.SoftwareUpdate.scan allow
 	
-	#
-	# ntp
-	# If you've had a problem keeping your clock accurate using network time, this tip may help out. Network time is controlled from the System Preferences, Date & Time pane, Network Time tab. Symptoms of the problem include:
-	# The 'Use a network time server' checkbox turning itself off after a restart.
-	# The clock drifting even though the "Set Time Now" button seems to work.
-	# OS X has a confusing "feature" that makes diagnosing the problem difficult: After a restart or after disabling and enabling the "Use a network time server" checkbox, OS X attempts to synchronize the time using a different method than when you press the "Set Time Now" button. After a restart or enabling "Use a network time server," OS X sends Network Time Protocol (NTP) messages using the User Datagram Protocol (UDP) from port 123 of your machine to port 123 of the specified NTP Server. The server replies from port 123 to port 123 of your machine.
-	# After pressing the "Set Time Now" button, OS X sends NTP messages from a very high port number (about 49150) of your machine to port 123 of the NTP Server. The server replies from port 123 to the same high port number of your machine.
-	# Open the terminal and type ntpq -p
-	# If ntpq outputs ntpq: read: Connection refused, then the "Use a network time server" checkbox is probably not enabled. If ntpq outputs No association ID's returned, then no NTP messages at all are getting through. If the ntpq output has a 16 in the st (stratum) column, then the (123/123) NTP messages are not getting through but the high port numbered "Set Time Now" messages are being received:
-	# If the ntpq output has a number lower than 16 in the "st" column, then NTP is working correctly:
-	# - uses the UDP (not TCP) protocol,
-	# - is from port 123,
-	# - is either to port 123 or to a port over 10,000,
-	# - is from the IP address of the specified NTP server.
-	# http://hints.macworld.com/article.php?story=20030217004435671
-	#
-	#systemsetup -setusingnetworktime "off"
-	#systemsetup -setnetworktimeserver "${default_domain}.com"
-	#systemsetup -setusingnetworktime "on"
-	#
-	# Can't do this, doesn't have an ip yet...
-
-
-	#
-	# prep the the network
-	#
+	#++ prep the the network
 	networksetup -setairportpower "en1" "off"
 	#networksetup -setv6off "Airport"
 	#networksetup -setv6off "Ethernet"
@@ -231,94 +191,51 @@ if [[ -d "/private/var/firstboot" ]]; then
 	#networksetup -setnetworkserviceenabled "Bluetooth PAN" "off"
 	#networksetup -setnetworkserviceenabled "FireWire" "off"
 	
-	#
-	# require admin password for comp-to-comp wifi
-	#
+	#++ require admin password for comp-to-comp wifi
 	/usr/libexec/airportd en1 prefs RequireAdminIBSS=YES
 
-	#
-	# set a name for troubleshooting/locating
-	#
+	#++ set a name for troubleshooting/locating
 	scutil --set ComputerName "${device_macaddress}"
 	scutil --set LocalHostName "${device_macaddress}"
 	scutil --set HostName "${device_macaddress}"
 	hostname "${device_macaddress}"
-	
-	# netbios...keep it short
-	defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "${device_macaddress}"
 
-	# shortname in Connect to Server dialog
-	# just to keep it consistent for end users 
+	#++ netbios...keep it short
+	defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName "${device_macaddress}"
+	
+	#++ shortname in Connect to Server dialog... is this needed?
 	defaults write /Library/Preferences/com.apple.NetworkAuthorization.plist UseDefaultName -bool NO
 	defaults write /Library/Preferences/com.apple.NetworkAuthorization.plist UseShortName -bool YES
 
-	# hide local admin users
-	# disable external accounts (i.e. accounts stored on drives other than the boot drive.)
-	# additional loginwindow system information
-	defaults write /Library/Preferences/com.apple.loginwindow.plist Hide500Users -bool YES
-	defaults write /Library/Preferences/com.apple.loginwindow.plist EnableExternalAccounts -bool NO
+	#++ additional loginwindow system information
+	#++ disable external accounts (i.e. accounts stored on drives other than the boot drive.)
+	#++ hide local admin users
+	#++ username/password input fields
+	#++ input menu
 	defaults write /Library/Preferences/com.apple.loginwindow.plist AdminHostInfo "DSStatus"
-
-	#
-	# pkgs
-	# adding directly to autodmg now.
-	#installer -dumplog -verbose -pkg "/private/var/firstboot/CreateLionUser.pkg" -target /
+	defaults write /Library/Preferences/com.apple.loginwindow.plist EnableExternalAccounts -bool NO
+	defaults write /Library/Preferences/com.apple.loginwindow.plist Hide500Users -bool YES
+	defaults write /Library/Preferences/com.apple.loginwindow SHOWFULLNAME -bool "TRUE"
+	defaults write /Library/Preferences/com.apple.loginwindow showInputMenu -bool "TRUE"
+	#defaults write /var/ard/Library/Preferences/com.apple.menuextra.textinput ModeNameVisible -bool "TRUE"
+	#defaults write /Library/Preferences/com.apple.loginwindow StartupDelay -int 13
+	#++ text
+	defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText -string "Unauthorised access to these resources is prohibited."
 	
-	# profiles
-	#
-	#maybe can't load them until you have Finder
-	#the_finder=$(ps -ax | grep "Finder.app" | grep -v grep | cut -d "/" -f5)
-	#if [ "${the_finder}" != "Finder.app" ]; then
-	#	echo "No finder yet."
-	#	exit 1
-	#fi
-	# vpn
-	#[[ -e "/private/var/firstboot/vpn.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/vpn.mobileconfig"
-	# wifi
-	#[[ -e "/private/var/firstboot/wifi.mobileconfig" ]] && profiles -I -F "/private/var/firstboot/wifi.mobileconfig"
-	
-	#
-	# email
-	#
-	perl "/usr/local/bin/email.pl" Booted
-
-	# Reset loginwindow
+	#++ reset loginwindow
 	defaults delete "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments
 	defaults write "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist" ProgramArguments -array-add "/System/Library/CoreServices/loginwindow.app/Contents/MacOS/loginwindow" "console"
-	sudo chown root:wheel "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
-	sudo chmod 644 "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
+	chown root:wheel "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
+	chmod 644 "${path_root}/System/Library/LaunchDaemons/com.apple.loginwindow.plist"
 
-	#
-	# cleanup
-	#
-	#pkgutil --forget com.org.boot
-
-	sudo srm -f /private/var/log/install.log
-	sudo touch /private/var/log/install.log
-	sudo chown root:wheel /private/var/log/install.log
-	sudo chmod 644 /private/var/log/install.log
-
-	sudo srm -f /private/var/log/system.log
-	sudo touch /private/var/log/system.log
-	sudo chown root:wheel /private/var/log/system.log
-	sudo chmod 644 /private/var/log/system.log
-
-	sudo srm -f /private/var/log/Auto*
-
-	#
-	# kickstart sharing
-	#
+	#++ kickstart sharing
 	/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -configure -allowAccessFor -allUsers -access -on -privs -all -clientopts -setvnclegacy -vnclegacy yes
 	/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -activate -restart -agent
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text1 "${device_model} - CPU: ${device_cpu} RAM: ${device_ram}"
 	defaults write "${path_root}/Library/Preferences/com.apple.RemoteDesktop.plist" Text2 "${device_serial}"
 
-	# should not get here again
+	#++ should not get here again
 	reboot
 fi
-
-# self destruct...or maybe comment this to ensure its persistent
-# dont need this anymore using loginwindow
-#[[ -e "/Library/LaunchDaemons/com.org.boot.plist" ]] && srm -f "/Library/LaunchDaemons/com.org.boot.plist"; srm -f "${0}"; launchctl remove "com.org.boot"
 
 exit 0

@@ -1,28 +1,28 @@
 #!/bin/bash
-path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi # fix //
+
+path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi #++ fix //
 formatted_date=$(date +"%Y%m%d%H%M%S")
-#
-# Defaults
-#
-# the plist
-# com.apple.airplay.plist
+
+#++ Defaults, I don't really like doing it this way but mcx isnt reliable and profiles arent baked yet.
+
+#++ com.apple.airplay.plist
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.airplay.dock" showInMenuBarIfPresent -bool false
-# com.apple.dashboard
+#++ com.apple.dashboard
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dashboard" layer-gadgets -array '<dict></dict>'
-# com.apple.driver.AppleBluetoothMultitouch.trackpad
+#++ com.apple.driver.AppleBluetoothMultitouch.trackpad
 defaults write "${path_root}/Library/Preferences/.GlobalPreferences com.apple.mouse.tapBehavior.plist" -int 1
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.trackpad" Clicking -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.trackpad" Dragging -int 0
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.trackpad" DragLock -int 0
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.trackpad" TrackpadThreeFingerDrag -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.trackpad" Dragging -int 0
-# com.apple.driver.AppleBluetoothMultitouch.mouse
+#++ com.apple.driver.AppleBluetoothMultitouch.mouse
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseButtonDivision -int 55
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseButtonMode -string TwoButton
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseButtonDivision -int 55
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseTwoFingerDoubleTapGesture -int 0
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.driver.AppleBluetoothMultitouch.mouse" MouseTwoFingerHorizSwipeGesture -int 0
-# com.apple.dock.plist (basic settings only).
+#++ com.apple.dock.plist (basic settings only).
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" autohide -bool false
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" launchanim -bool false
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" mineffect -string "scale"
@@ -30,21 +30,21 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" wvous-bl-modifier -int 0
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" wvous-br-corner -int 5
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock" wvous-br-modifier -int 0
-# com.apple.ATS.plist
+#++ com.apple.ATS.plist
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.ATS" ATSAutoActivation -string ATSAutoActivationDisable
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.ATS" ATSProtectRequiredSystemFontsSetting -string NO
-# com.apple.Console.plist
+#++ com.apple.Console.plist
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Console" ApplePersistenceIgnoreState YES
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Console" NSQuitAlwaysKeepsWindows -int 0
 #com.apple.DiskUtility.plist
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.DiskUtility" advanced-image-options -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.DiskUtility" DUDebugMenuEnabled -bool true
-# com.apple.finder.plist (possibly redundant if DisableAllAnimations is TRUE, requires testing).
+#++ com.apple.finder.plist (possibly redundant if DisableAllAnimations is TRUE, requires testing).
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" AnimateInfoPanes -bool false
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" AnimateWindowZoom -bool false
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" DisableAllAnimations -bool true
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" ZoomRects -bool false
-# Just some standardisation
+#++ Just some standardisation
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" _FXShowPosixPathInTitle -bool true
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" DownloadsFolderListViewSettingsVersion -int 1
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" FXDefaultSearchScope -string SCcf
@@ -58,11 +58,11 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" ShowRemovableMediaOnDesktop -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" ShowPathbar -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder" ShowStatusBar -bool true
-# com.apple.FontBook.plist
+#++ com.apple.FontBook.plist
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.FontBook" FBValidateFontsBeforeInstalling -bool false
-# com.apple.helpviewer
+#++ com.apple.helpviewer
 #defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.helpviewer" DevMode -bool false
-# iTunes
+#++ iTunes
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" disableCheckForUpdates -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" disableGeniusSidebar -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" disableGetAlbumArtwork -bool true
@@ -73,14 +73,14 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" disableSharedMusic -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" dontAutomaticallySyncIPods -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.iTunes" lookForSharedMusic -bool false
-# Mail
+#++ Mail
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.mail" DisableInlineAttachmentViewing -bool true
-# NetworkBrowser
+#++ NetworkBrowser
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.NetworkBrowser" DisableAirDrop -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.NetworkBrowser" BrowseAllInterfaces -bool false
-# Printing Prefs
+#++ Printing Prefs
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.print.PrintingPrefs" "Quit When Finished" -bool true
-# Safari
+#++ Safari
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Safari" ApplePersistenceIgnoreState YES
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Safari" AutoFillFromAddressBook -bool false
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Safari" AutoFillMiscellaneousForms -bool false
@@ -95,9 +95,9 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Safari" ShowStatusBar -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.Safari" HomePage "http://intranet"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.internetconfigpriv" WWWHomePage "http://intranet"
-# System Preferences Pane
+#++ System Preferences Pane
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systempreferences" com.apple.dtandsspref.lastselectedtab "com.apple.preference.desktopscreeneffect.screeneffects"
-# Menu Extras
+#++ Menu Extras
 defaults delete "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/Applications/Utilities/Keychain Access.app/Contents/Resources/Keychain.menu"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/Bluetooth.menu"
@@ -105,18 +105,18 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/Volume.menu"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/Displays.menu"
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.systemuiserver" "menuExtras" -array-add -string "/System/Library/CoreServices/Menu Extras/RemoteDesktop.menu"
-# TimeMachine
+#++ TimeMachine
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.TimeMachine" DoNotOfferNewDisksForBackup -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.TimeMachine" AutoBackup -bool false
-# Trackpad
+#++ Trackpad
 defaults -currentHost write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/ByHost/.GlobalPreferences" "com.apple.mouse.tapBehavior" -int 1
-# com.apple.universalaccess.plist
+#++ com.apple.universalaccess.plist
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.universalaccess" voiceOverOnOffKey -bool false
-# com.apple.CrashReporter.plist (hide from scared end users. maybe switch to basic mode...offers them the choice to delete prefs after second crash).
+#++ com.apple.CrashReporter.plist (hide from scared end users. maybe switch to basic mode...offers them the choice to delete prefs after second crash).
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.CrashReporter" DialogType Server
-# com.apple.desktopservices.plist (not doing this anymore. Causes weird behaviour with Windows Shares in pre 10.7).
+#++ com.apple.desktopservices.plist (not doing this anymore. Causes weird behaviour with Windows Shares in pre 10.7).
 #defaults write "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.desktopservices" DSDontWriteNetworkStores -bool TRUE
-# Speed up finder info on remote volumes?
+#++ Speed up finder info on remote volumes?
 #/usr/libexec/PlistBuddy -c "Add :FXInfoPanesExpanded dict" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :FXInfoPanesExpanded:Comments bool NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Set :FXInfoPanesExpanded:Comments NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
@@ -130,9 +130,9 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 #/usr/libexec/PlistBuddy -c "Set :FXInfoPanesExpanded:Preview NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :FXInfoPanesExpanded:Privileges bool NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Set :FXInfoPanesExpanded:Privileges NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
-# set standard views, remove previews etc to speed up finder (also to avoid WiFs bug)
+#++ set standard views, remove previews etc to speed up finder (also to avoid WiFs bug)
 #if [ "${device_os}" == "10.7.5" ]; then
-# echo "10.7.5 so skipping finder, should probably do this with 10.8 too because do we really need this?"
+#++ echo "10.7.5 so skipping finder, should probably do this with 10.8 too because do we really need this?"
 #else
 #/usr/libexec/PlistBuddy -c "Add :StandardViewOptions dict" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Add :StandardViewOptions:ColumnViewOptions dict" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
@@ -271,7 +271,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 #/usr/libexec/PlistBuddy -c "Add :StandardViewSettings:ListViewSettings:columns:version:width integer 200" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #/usr/libexec/PlistBuddy -c "Set :StandardViewSettings:ListViewSettings:columns:version:width 200" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.finder.plist"
 #fi
-# com.apple.symbolichotkeys.plist (Disable Dashboard and Mission Control Keys so they are default Fn keys), arrggg! changes every time the OS adds functionality or new keys. Find and disable 10.8 dictation key.
+#++ com.apple.symbolichotkeys.plist (Disable Dashboard and Mission Control Keys so they are default Fn keys), arrggg! changes every time the OS adds functionality or new keys. Find and disable 10.8 dictation key.
 #/usr/libexec/PlistBuddy -c "Add :AppleSymbolicHotKeys:32:enabled bool NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.symbolichotkeys.plist"
 #/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:32:enabled NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.symbolichotkeys.plist"
 #/usr/libexec/PlistBuddy -c "Add :AppleSymbolicHotKeys:33:enabled bool NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.symbolichotkeys.plist"
@@ -300,7 +300,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 #/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:73:enabled NO" "/System/Library/User Template/English.lproj/Library/Preferences/com.apple.symbolichotkeys.plist"
 
 
-# .GlobalPreferences
+#++ .GlobalPreferences
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleKeyboardUIMode -int 2
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleMiniaturizeOnDoubleClick -bool true
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" AppleShowAllExtensions -bool true
@@ -315,7 +315,7 @@ defaults write "${path_root}/System/Library/User Template/English.lproj/Library/
 defaults write "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/.GlobalPreferences" com.apple.keyboard.fnState -bool true
 
 
-# com.apple.dock.plist (lazy way for now)
+#++ com.apple.dock.plist (lazy way for now)
 cat > "${path_root}/System/Library/User Template/English.lproj/Library/Preferences/com.apple.dock.plist" << EOPROFILE
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
