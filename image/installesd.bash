@@ -18,6 +18,9 @@ if [[ $current_directory == "." ]]; then
 	current_directory=$(pwd)
 fi
 
+#++ kickstart packages helper?
+sudo "${current_directory}/packages.bash"
+
 #++ setup some variables
 osx_version=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.2 etc
 osx_build=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
