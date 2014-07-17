@@ -85,31 +85,30 @@ fi
 #++ create a sparse disk
 hdiutil create -size "${volume_size}" -type SPARSE -fs HFS+J -volname "${volume_name}" -uid 0 -gid 80 -mode 1775 ${sparse_dmg}
 if [ $? -ne 0 ]; then
-	echo "could not create ${sparse_dmg} ... exiting"
-	exit 1
+	echo "could not create ${sparse_dmg} ..."
 fi
+
+#++ attach sparse disk
 attached_sparse=$(hdiutil attach -nobrowse -noautoopen -noverify -owners on "${sparse_dmg}" | grep Apple_HFS | cut -f3)
 disk_mounts+=("${attached_sparse}")
 if [ $? -ne 0 ]; then
-	echo "could not attach ${attached_sparse} ... exiting"
-	exit 1
-fi
-
-#++ install OSX
-installer -verboseR -dumplog -pkg /Volumes/OS\ X\ Install\ ESD/Packages/OSInstall.mpkg -target "${attached_sparse}"
-if [ $? -ne 0 ]; then
-	echo "something went wrong installing OSInstall.mpkg ... exiting"
-	exit 1
-fi
-
-#++ install packages
-for p in $(ls ${current_directory} | grep ".pkg")
-do
-	installer -verboseR -dumplog -pkg "${current_directory}/${p}" -target "${attached_sparse}"
+	echo "could not attach ${attached_sparse} ..."
+else
+	#++ install OSX
+	installer -verboseR -dumplog -pkg /Volumes/OS\ X\ Install\ ESD/Packages/OSInstall.mpkg -target "${attached_sparse}"
 	if [ $? -ne 0 ]; then
-		echo "something may have gone wrong with ${current_directory}/${p}"
+		echo "something went wrong installing OSInstall.mpkg ..."
+	else
+		#++ install packages
+		for p in $(ls ${current_directory} | grep ".pkg")
+		do
+			installer -verboseR -dumplog -pkg "${current_directory}/${p}" -target "${attached_sparse}"
+			if [ $? -ne 0 ]; then
+				echo "something may have gone wrong with ${current_directory}/${p}"
+			fi
+		done
 	fi
-done
+fi
 
 #++ USB option?
 if [[ ${2} == "--usb" ]] || [[ ${3} == "--usb" ]]; then
@@ -183,18 +182,20 @@ fi
 eject_disks
 
 #++ compress
-hdiutil convert -puppetstrings -format UDZO "${sparse_dmg}" -o "${target_dmg}"
-if [ $? -ne 0 ]; then
-	echo "something went wrong converting UDZO ${sparse_dmg} ... exiting"
-	exit 1
+if [[ -e "${sparse_dmg}" ]]; then
+	hdiutil convert -puppetstrings -format UDZO "${sparse_dmg}" -o "${target_dmg}"
+	if [ $? -ne 0 ]; then
+		echo "something went wrong converting UDZO ${sparse_dmg} ... exiting"
+	fi
 fi
 
 #++ asr scan
-sudo asr imagescan --source ${target_dmg}
-if [ $? -ne 0 ]; then
-	echo "asr scan for restore failed."
+if [[ -e "${target_dmg}" ]]; then
+	sudo asr imagescan --source ${target_dmg}
+	if [ $? -ne 0 ]; then
+		echo "asr scan for restore failed."
+	fi
 fi
-sleep 5
 
 #++ USB option?
 if [[ -e "${target_usb_dmg}" ]]; then
@@ -211,7 +212,6 @@ if [[ ${2} == "--iso" ]] || [[ ${3} == "--iso" ]]; then
    hdiutil convert "${target_dmg}" -format UDTO -o "${target_dmg}.iso"
    mv "${target_dmg}.iso.cdr" "${target_dmg}.iso"
 fi
-sleep 5
 
 #++ cleanup
 rm ~/Desktop/os.sparseimage
