@@ -1,15 +1,17 @@
 #!/bin/bash
 
-#+ create read write sparse disk
-#+ mount installesd.dmg, use the system version naming convention.
-#+ install OSInstall.mpkg
-#+ install packages in current working directory.
-#+ convert sparse disk to read only compressed disk.
-#+ asr scan compressed disk.
-#+ simple, minimal error checking.
+#++ mount installesd.dmg
+#++ create read write sparse disk
+#++ install OSInstall.mpkg
+#++ install any packages in current working directory.
+#++ convert sparse disk.
+#++ asr scan it.
 
-#+ adapted from https://github.com/MagerValp/AutoDMG
-#+ and some stuff here https://github.com/rtrouton
+#++ if --usb is specified
+#++ create a custom USB dmg based on BaseSystem.dmg
+#++ create /INSTALL folder in the root of the custom USB to store deployable images
+#++ convert the custom BaseSystem.dmg
+#++ asr scan it.
 
 current_directory=$(dirname $0) #++ use current working directory
 if [[ $current_directory == "." ]]; then
@@ -19,8 +21,10 @@ fi
 #++ setup some variables
 osx_version=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductVersion)	# 10.9.2 etc
 osx_build=$(defaults read "/System/Library/CoreServices/SystemVersion" ProductBuildVersion) # 13A603 etc
+basesystem_dmg="/Volumes/OS X Install ESD/BaseSystem.dmg" # APPLE'S BASE SYSTEM, THE BOOTABLE RECOVERY OS
 sparse_dmg=~/Desktop/os.sparseimage
 target_dmg=~/Desktop/${osx_version}_${osx_build}.dmg
+target_usb_dmg=~/Desktop/${osx_version}_${osx_build}_USB.dmg
 volume_name="System"
 volume_size="20g"
 
@@ -35,7 +39,9 @@ if [ $# -eq 0 ]; then
 cat <<EOF
 
 	Usage:
-	sudo $(basename "$0") PATH_TO_ESD
+	sudo $(basename "$0") PATH_TO_ESD [--iso]
+		--iso 	Create Virtualbox bootable image.
+		--usb 	Create bootable image for USB.
 
 EOF
 exit 1
@@ -45,6 +51,8 @@ fi
 declare -a disk_mounts
 eject_disks() {
     unset tempdirs
+    sleep 3
+    hdiutil detach "/Volumes/OS X Install ESD" -force 2>/dev/null
     for mount_point in "${disk_mounts[@]}"; do
     if [[ -d "${mount_point}" ]]; then
         if ! hdiutil eject "${mount_point}"; then
@@ -100,6 +108,74 @@ do
 	fi
 done
 
+#++ USB option?
+if [[ ${2} == "--usb" ]] || [[ ${3} == "--usb" ]]; then
+	#++ USB convert original basesystem.dmg to RW
+	if [ -e "${basesystem_dmg}" ]; then
+		open /tmp
+		sudo hdiutil convert -format UDRW "${basesystem_dmg}" -o /tmp/BaseSystemRW.dmg
+		if [ $? -ne 0 ]; then
+			echo "error converting ${basesystem_dmg}"
+		fi
+	fi
+	sleep 3
+
+	#++ eject disks, if they aren't the next conversion won't work
+	eject_disks
+	sleep 3
+
+	#++ attach RW basesytem.dmg
+	if [ -e "/tmp/BaseSystemRW.dmg" ]; then
+		attached_basesystem_temp=$(hdiutil attach "/tmp/BaseSystemRW.dmg" -nobrowse -owners on)
+		disk_mounts+=("${attached_basesystem_temp}")
+		if [ $? -ne 0 ]; then
+			echo "error attaching /tmp/BaseSystemRW.dmg ..."
+		fi
+	fi
+	sleep 3
+
+	#++ rename temp BaseSystem.dmg VOLUME
+	#++ probably need something smarter here to detect /dev/disks etc
+	if [[ -d "/Volumes/OS X Base System" ]]; then
+		sudo diskutil rename "OS X Base System" "USB OS X Base System"
+		if [ $? -ne 0 ]; then
+			echo "error renaming '/Volumes/OS X Base System' to 'USB OS X Base System'"
+		fi
+	fi
+	sleep 3
+
+	#++ this folder will contain the DMG or PKG files used in the Recovery HD menu/automation script
+	if [[ -d "/Volumes/USB OS X Base System" ]]; then
+		mkdir "/Volumes/USB OS X Base System/INSTALL"
+		if [ $? -ne 0 ]; then
+			echo "error INSTALL folder ..."
+		fi
+	else
+		echo "error USB volume..."
+	fi
+
+	#++ detach USB volume
+	hdiutil detach "/Volumes/USB OS X Base System" -force 2>/dev/null
+
+	#++ compress
+	sudo hdiutil convert -format UDZO "/tmp/BaseSystemRW.dmg" -o ${target_usb_dmg}
+	if [ $? -ne 0 ]; then
+		echo "error UDZO ..."
+	fi
+
+	#++ clean up
+	rm -f "/tmp/BaseSystemRW.dmg"
+
+	#++ asr scan
+	if [[ -e ${target_usb_dmg} ]]; then
+		sudo asr imagescan --source ${target_usb_dmg}
+		if [ $? -ne 0 ]; then
+			echo "asr scan for restore failed."
+		fi
+	fi
+
+fi
+
 #++ eject disks, if they aren't the next conversion won't work
 eject_disks
 
@@ -114,6 +190,23 @@ fi
 sudo asr imagescan --source ${target_dmg}
 if [ $? -ne 0 ]; then
 	echo "asr scan for restore failed."
+fi
+sleep 5
+
+#++ USB option?
+if [[ -e "${target_usb_dmg}" ]]; then
+	#++ copy to USB, can't do this without resizing the custom DMG
+	#++ and moving this section up in front of where we eject the disks.
+	#++ for now just echo
+	#cp -f "${target_dmg}" "/Volumes/USB OS X Base System/INSTALL/"
+	echo "USB : Restore ${target_usb_dmg} to your desired USB disk."
+	echo "      Copy ${target_dmg} to the /INSTALL directory on your USB disk."
+fi
+
+#++ create iso for virtualbox
+if [[ ${2} == "--iso" ]] || [[ ${3} == "--iso" ]]; then
+   hdiutil convert "${target_dmg}" -format UDTO -o "${target_dmg}.iso"
+   mv "${target_dmg}.iso.cdr" "${target_dmg}.iso"
 fi
 sleep 5
 
