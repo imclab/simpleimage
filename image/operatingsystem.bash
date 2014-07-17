@@ -83,48 +83,52 @@ if [ -e "${1}" ]; then
 fi
 
 #++ create a sparse disk
-hdiutil create -size "${volume_size}" -type SPARSE -fs HFS+J -volname "${volume_name}" -uid 0 -gid 80 -mode 1775 ${sparse_dmg}
-if [ $? -ne 0 ]; then
-	echo "could not create ${sparse_dmg} ..."
+if [[ ! -e "${target_dmg}" ]]; then
+	hdiutil create -size "${volume_size}" -type SPARSE -fs HFS+J -volname "${volume_name}" -uid 0 -gid 80 -mode 1775 ${sparse_dmg}
+	if [ $? -ne 0 ]; then
+		echo "could not create ${sparse_dmg} ..."
+	fi
 fi
 
 #++ attach sparse disk
-attached_sparse=$(hdiutil attach -nobrowse -noautoopen -noverify -owners on "${sparse_dmg}" | grep Apple_HFS | cut -f3)
-disk_mounts+=("${attached_sparse}")
-if [ $? -ne 0 ]; then
-	echo "could not attach ${attached_sparse} ..."
-else
-	#++ install OSX
-	installer -verboseR -dumplog -pkg /Volumes/OS\ X\ Install\ ESD/Packages/OSInstall.mpkg -target "${attached_sparse}"
+if [[ -e "${sparse_dmg}" ]]; then
+	attached_sparse=$(hdiutil attach -nobrowse -noautoopen -noverify -owners on "${sparse_dmg}" | grep Apple_HFS | cut -f3)
+	disk_mounts+=("${attached_sparse}")
 	if [ $? -ne 0 ]; then
-		echo "something went wrong installing OSInstall.mpkg ..."
+		echo "could not attach ${attached_sparse} ..."
 	else
-		#++ install packages
-		for p in $(ls ${current_directory} | grep ".pkg")
-		do
-			installer -verboseR -dumplog -pkg "${current_directory}/${p}" -target "${attached_sparse}"
-			if [ $? -ne 0 ]; then
-				echo "something may have gone wrong with ${current_directory}/${p}"
-			fi
-		done
+		#++ install OSX
+		installer -verboseR -dumplog -pkg /Volumes/OS\ X\ Install\ ESD/Packages/OSInstall.mpkg -target "${attached_sparse}"
+		if [ $? -ne 0 ]; then
+			echo "something went wrong installing OSInstall.mpkg ..."
+		else
+			#++ install packages
+			for p in $(ls ${current_directory} | grep ".pkg")
+			do
+				installer -verboseR -dumplog -pkg "${current_directory}/${p}" -target "${attached_sparse}"
+				if [ $? -ne 0 ]; then
+					echo "something may have gone wrong with ${current_directory}/${p}"
+				fi
+			done
+		fi
 	fi
 fi
 
 #++ USB option?
 if [[ ${2} == "--usb" ]] || [[ ${3} == "--usb" ]]; then
 	#++ USB convert original basesystem.dmg to RW
-	if [ -e "${basesystem_dmg}" ]; then
-		open /tmp
-		sudo hdiutil convert -format UDRW "${basesystem_dmg}" -o /tmp/BaseSystemRW.dmg
-		if [ $? -ne 0 ]; then
-			echo "error converting ${basesystem_dmg}"
+	if [[ ! -e "${target_usb_dmg}" ]]; then
+		if [ -e "${basesystem_dmg}" ]; then
+			sudo hdiutil convert -format UDRW "${basesystem_dmg}" -o /tmp/BaseSystemRW.dmg
+			if [ $? -ne 0 ]; then
+				echo "error converting ${basesystem_dmg}"
+			fi
 		fi
 	fi
 	sleep 3
 
 	#++ eject disks, if they aren't the next conversion won't work
 	eject_disks
-	sleep 3
 
 	#++ attach RW basesytem.dmg
 	if [ -e "/tmp/BaseSystemRW.dmg" ]; then
@@ -152,48 +156,49 @@ if [[ ${2} == "--usb" ]] || [[ ${3} == "--usb" ]]; then
 		if [ $? -ne 0 ]; then
 			echo "error INSTALL folder ..."
 		fi
-	else
-		echo "error USB volume..."
 	fi
 
 	#++ detach USB volume
 	hdiutil detach "/Volumes/USB OS X Base System" -force 2>/dev/null
+	sleep 3
 
 	#++ compress
-	sudo hdiutil convert -format UDZO "/tmp/BaseSystemRW.dmg" -o ${target_usb_dmg}
-	if [ $? -ne 0 ]; then
-		echo "error UDZO ..."
-	fi
-
-	#++ clean up
-	rm -f "/tmp/BaseSystemRW.dmg"
-
-	#++ asr scan
-	if [[ -e ${target_usb_dmg} ]]; then
-		sudo asr imagescan --source ${target_usb_dmg}
+	if [[ -e "/tmp/BaseSystemRW.dmg" ]]; then
+		sudo hdiutil convert -format UDZO "/tmp/BaseSystemRW.dmg" -o ${target_usb_dmg}
 		if [ $? -ne 0 ]; then
-			echo "asr scan for restore failed."
+			echo "error UDZO ..."
+		else
+			#++ asr scan
+			if [[ -e ${target_usb_dmg} ]]; then
+				sudo asr imagescan --source ${target_usb_dmg}
+				if [ $? -ne 0 ]; then
+					echo "asr scan for restore failed."
+				fi
+			fi
 		fi
 	fi
-
+	sleep 3
+	
+	#++ clean up
+	rm -f "/tmp/BaseSystemRW.dmg"
 fi
 
 #++ eject disks, if they aren't the next conversion won't work
 eject_disks
 
-#++ compress
+#++ compress & asr scan
 if [[ -e "${sparse_dmg}" ]]; then
 	hdiutil convert -puppetstrings -format UDZO "${sparse_dmg}" -o "${target_dmg}"
 	if [ $? -ne 0 ]; then
-		echo "something went wrong converting UDZO ${sparse_dmg} ... exiting"
-	fi
-fi
-
-#++ asr scan
-if [[ -e "${target_dmg}" ]]; then
-	sudo asr imagescan --source ${target_dmg}
-	if [ $? -ne 0 ]; then
-		echo "asr scan for restore failed."
+		echo "something went wrong converting UDZO ${sparse_dmg} ..."
+	else
+		#++ asr scan
+		if [[ -e "${target_dmg}" ]]; then
+			sudo asr imagescan --source ${target_dmg}
+			if [ $? -ne 0 ]; then
+				echo "asr scan for restore failed."
+			fi
+		fi
 	fi
 fi
 
@@ -214,6 +219,8 @@ if [[ ${2} == "--iso" ]] || [[ ${3} == "--iso" ]]; then
 fi
 
 #++ cleanup
-rm ~/Desktop/os.sparseimage
+if [[ -e ~/Desktop/os.sparseimage ]]; then
+	rm ~/Desktop/os.sparseimage
+fi
 
 exit 0
