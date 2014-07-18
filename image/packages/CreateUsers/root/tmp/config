@@ -1,0 +1,9 @@
+#!/bin/bash
+
+short_name=""
+UniqueID=""
+ShadowHashData='()'
+
+short_name2=""
+UniqueID2=""
+ShadowHashData2='()'
