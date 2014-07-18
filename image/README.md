@@ -1,4 +1,4 @@
-# installesd.bash
+# operatingsystem.bash
 builds a dmg base on Apple InstallESD.dmg + any packages in the current working directory. ie. the minimal OSX
 packages in the packages folder.
 
