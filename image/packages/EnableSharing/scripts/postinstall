@@ -1,11 +1,12 @@
 #!/bin/bash
 
 #++ configure, ard and ssh. set vnc password and motd banner
-# ensure your payload (/tmp/EnableSharing.plist) is configured with vnc_hash and motd_banner
+#++ configure payload, include variables /tmp/config
 
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi #++ fix //
-vnc_pwd=$(defaults read "${path_root}/tmp/EnableSharing.plist" vnc_hash)
-motd_banner=$(defaults read "${path_root}/tmp/EnableSharing.plist" motd_banner)
+
+#++ source the variables
+. "${path_root}/tmp/config"
 
 #++ ard agent always run
 #++ LaunchAgent to configure Apple Remote Desktop client,

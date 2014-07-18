@@ -1,0 +1,4 @@
+#!/bin/bash
+
+vnc_pwd=""
+motd_banner="Unauthorised access to these resources is prohibited."
