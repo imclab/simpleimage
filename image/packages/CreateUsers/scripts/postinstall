@@ -1,56 +1,55 @@
 #!/bin/bash
 
-#++ configure payload, include $shortName $uid and $hash /tmp/CreateUsers.plist (could add other options if you want)
+#++ configure payload, include variables /tmp/config
 #++ configure payload, include /tmp/kcpassword.10.x.x
 
 path_root="$3"; if [ -z "${path_root}" ] || [ "${path_root}" = "/" ]; then path_root=""; fi #++ fix //
 dev_os=$(defaults read "${path_root}/System/Library/CoreServices/SystemVersion" ProductVersion)	#++ 10.9.x etc
-short_name=$(defaults read "${path_root}/tmp/CreateUsers.plist" shortName)
-short_name2=$(defaults read "${path_root}/tmp/CreateUsers.plist" shortName2)
-uid=$(defaults read "${path_root}/tmp/CreateUsers.plist" uid)
-uid2=$(defaults read "${path_root}/tmp/CreateUsers.plist" uid2)
-shadowhash=$(sudo defaults read ${path_root}/tmp/CreateUsers.plist shadowhash)
-shadowhash2=$(sudo defaults read ${path_root}/tmp/CreateUsers.plist shadowhash2)
+
+#++ source the dscl variables
+. "${path_root}/tmp/config"
 
 #++ create the user on the target volume (this will be your autologin user)
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name}
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} UserShell /bin/bash
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} RealName "Local Admin"
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} PrimaryGroupID 20
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} UniqueID ${uid}
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} UniqueID ${UniqueID}
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} Picture "/Library/User Pictures/Nature/Zen.tif"
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} NFSHomeDirectory /var/${short_name}
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name} temppassword
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name} NFSHomeDirectory "/var/${short_name}"
+#dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name} tellevery1
  
 #++ admin access (optional)
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Groups/admin GroupMembership ${short_name}
 
 #++ write the stored hash now
-defaults write "${path_root}/var/db/dslocal/nodes/Default/Users/${short_name}.plist" ShadowHash "${shadowhash}"
+dscacheutil -flushcache
+defaults write "${path_root}/var/db/dslocal/nodes/Default/Users/${short_name}.plist" ShadowHashData "${ShadowHashData}"
 
-#++ create the home directory
-#cp -R "/System/Library/User Template/English.lproj" /var/${short_name}
-#chown -R ${short_name}:staff /Users/${short_name}
+#++ create the home directory?
+#cp -R "${path_root}/System/Library/User Template/English.lproj" "${path_root}/var/${short_name}""
+#chown -R ${short_name}:staff "${path_root}/Users/${short_name}""
 
 #++ create the user on the target volume (this will be your autologin user)
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2}
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} UserShell /bin/bash
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} RealName "Local Admin"
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} PrimaryGroupID 20
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} UniqueID ${uid2}
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} UniqueID ${UniqueID2}
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} Picture "/Library/User Pictures/Nature/Zen.tif"
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} NFSHomeDirectory /var/${short_name2}
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name2} temppassword
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Target/Users/${short_name2} NFSHomeDirectory "/var/${short_name2}"
+#dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name2} tellevery1
  
 #++ admin access (optional)
 dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Groups/admin GroupMembership ${short_name2}
 
 #++ write the stored hash now
-defaults write "${path_root}/var/db/dslocal/nodes/Default/Users/${short_name2}.plist" ShadowHash "${shadowhash2}"
+dscacheutil -flushcache
+defaults write "${path_root}/var/db/dslocal/nodes/Default/Users/${short_name2}.plist" ShadowHashData "${ShadowHashData2}"
 
-#++ create the home directory
-#cp -R "/System/Library/User Template/English.lproj" /var/${short_name2}
-#chown -R ${short_name2}:staff /Users/${short_name2}
+#++ create the home directory?
+#cp -R "${path_root}/System/Library/User Template/English.lproj" "${path_root}/var/${short_name2}"
+#chown -R ${short_name2}:staff "${path_root}/Users/${short_name2}"
 
 #++ enable autlogin user
 the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
@@ -60,7 +59,7 @@ the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
 
 #++ payload
 [[ -e "${path_root}/etc/kcpassword" ]] && mv -f "${path_root}/etc/kcpassword"{,."${formatted_date}"}
-[[ -e "${path_root}/tmp/kcpassword.${dev_os}" ]] && cp -f "${path_root}/tmp/kcpassword.${dev_os}" "${path_root}/etc/kcpassword" || exit 1
+[[ -e "${path_root}/tmp/kcpassword.${dev_os}" ]] && mv -f "${path_root}/tmp/kcpassword.${dev_os}" "${path_root}/etc/kcpassword" || exit 1
 [[ -e "${path_root}/etc/kcpassword" ]] && chown root:wheel "${path_root}/etc/kcpassword" || exit 1
 [[ -e "${path_root}/etc/kcpassword" ]] && chmod 600 "${path_root}/etc/kcpassword" || exit 1
 [[ -e "${path_root}/etc/kcpassword.disabled" ]] && srm -f "${path_root}/etc/kcpassword.disabled"
@@ -68,6 +67,5 @@ the_plist="${path_root}/Library/Preferences/com.apple.loginwindow.plist"
 #++ cleanup
 #++ maybe check if the payload worked, if it didn't remove the preference changes so this payload doesn't leave anything behind
 [[ -e "${path_root}/tmp/CreateUsers.plist" ]] && srm -f "${path_root}/tmp/CreateUsers.plist"
-srm -f "${path_root}/tmp/kcpassword*"
 
 exit 0
