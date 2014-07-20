@@ -20,7 +20,7 @@ dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Tar
 #dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name} tellevery1
  
 #++ admin access (optional)
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Groups/admin GroupMembership ${short_name}
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Local/Target/Groups/admin GroupMembership ${short_name}
 
 #++ write the stored hash now
 dscacheutil -flushcache
@@ -41,7 +41,7 @@ dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -create /Local/Tar
 #dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -passwd /Local/Target/Users/${short_name2} tellevery1
  
 #++ admin access (optional)
-dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Groups/admin GroupMembership ${short_name2}
+dscl -f "${path_root}/var/db/dslocal/nodes/Default" localonly -append /Local/Target/Groups/admin GroupMembership ${short_name2}
 
 #++ write the stored hash now
 dscacheutil -flushcache
