@@ -1,1 +1,0 @@
-your dmgdeploy.dmg file goes here.
